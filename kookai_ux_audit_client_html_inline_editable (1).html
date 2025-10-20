@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KOOKAÏ – UX Audit Report</title>
+  <style>
+    body {font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;margin:0;background:#fff;color:#000;line-height:1.6;}
+    .header {background:#000;color:#fff;padding:60px 40px;}
+    .header h1 {font-weight:300;margin:0 0 8px;letter-spacing:-1px;}
+    .meta-grid {display:flex;gap:24px;margin-top:30px;}
+    .meta-item {background:rgba(255,255,255,0.08);padding:16px;border-radius:8px;}
+    .meta-label {font-size:0.75rem;text-transform:uppercase;opacity:0.7;}
+    .meta-value {font-size:1.8rem;font-weight:300;}
+    .nav {background:#f5f5f5;position:sticky;top:0;display:flex;justify-content:center;border-bottom:1px solid #ddd;z-index:100;}
+    .nav button {background:none;border:none;padding:20px 30px;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;color:#6b6b6b;font-weight:600;}
+    .nav button.active {color:#000;border-bottom:3px solid #000;background:#fff;}
+    section {display:none;padding:60px 40px;max-width:1200px;margin:0 auto;}
+    section.active {display:block;}
+    h2 {font-weight:300;font-size:2.2rem;letter-spacing:-0.5px;margin-bottom:20px;}
+    /* Cards */
+    .card-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;}
+    .card {border:1px solid #e5e5e5;border-radius:14px;padding:20px;overflow:hidden;}
+    .badge {display:inline-block;font-size:0.75rem;font-weight:700;text-transform:uppercase;padding:4px 10px;border-radius:12px;margin-bottom:12px;}
+    .critical {background:#fee2e2;color:#dc2626;}
+    .high {background:#ffedd5;color:#ea580c;}
+    .medium {background:#fef3c7;color:#a16207;}
+    .low {background:#ecfccb;color:#3f6212;}
+    .card h3 {margin:6px 0;font-size:1.1rem;font-weight:700;}
+    .card p {margin:6px 0 14px;color:#555;font-size:0.9rem;}
+    .impact-box {background:#f5f5f5;padding:10px 14px;border-radius:10px;font-size:0.85rem;}
+    .impact-title {text-transform:uppercase;font-size:0.7rem;letter-spacing:0.5px;color:#6b6b6b;font-weight:600;margin-bottom:4px;}
+    .impact-value {font-weight:700;}
+    /* Outcome tags */
+    .tags {display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .tag {font-size:.72rem;border:1px solid #e5e5e5;border-radius:999px;padding:4px 10px;background:#fff}
+    .outcome-bar{margin:12px 0 24px;display:flex;gap:10px;flex-wrap:wrap}
+    .out-btn{padding:6px 14px;border:1px solid #ddd;border-radius:20px;background:#fff;cursor:pointer;font-size:0.85rem}
+    .out-btn.active{background:#000;color:#fff;border-color:#000}
+    .filter-bar {margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;}
+    .filter-btn {padding:6px 14px;border:1px solid #ddd;border-radius:20px;background:#fff;cursor:pointer;font-size:0.85rem;}
+    .filter-btn.active {background:#000;color:#fff;border-color:#000;}
+    /* Roadmap timeline */
+    .roadmap{position:relative;margin-top:10px}
+    .rm-timeline{position:relative;padding-left:48px}
+    .rm-timeline:before{content:"";position:absolute;left:24px;top:0;bottom:0;width:2px;background:linear-gradient(#000,transparent)}
+    .rm-item{position:relative;margin:18px 0}
+    .rm-item:before{content:"";position:absolute;left:16px;top:26px;width:14px;height:14px;background:#000;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #000}
+    .rm-card{border:1px solid #e5e5e5;border-radius:14px;padding:22px;background:#fff}
+    .rm-badge{display:inline-block;background:#000;color:#fff;padding:6px 12px;border-radius:999px;font-size:.72rem;letter-spacing:.6px;text-transform:uppercase;font-weight:700;margin-bottom:10px}
+    .rm-title{font-size:1.05rem;font-weight:800;margin:4px 0 10px}
+    .rm-list{list-style:none;padding:0;margin:0}
+    .rm-list li{display:flex;gap:10px;align-items:flex-start;margin:8px 0}
+    .rm-list li:before{content:"➜";font-size:.9rem;line-height:1;margin-top:2px}
+    /* Executive Summary */
+    .score-card{background:linear-gradient(135deg,#f5f5f5,#e9e9e9);border-radius:20px;padding:40px;margin-bottom:40px;display:flex;gap:40px;align-items:center;flex-wrap:wrap}
+    .score-main{min-width:240px}
+    .score-circle{width:160px;height:160px;position:relative}
+    .score-circle svg{transform:rotate(-90deg)}
+    .score-circle-bg{fill:none;stroke:rgba(0,0,0,.1);stroke-width:8}
+    .score-circle-fill{fill:none;stroke:#000;stroke-width:8;stroke-linecap:round;stroke-dasharray:440;stroke-dashoffset:145;transition:stroke-dashoffset 1s ease}
+    .score-number{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:200}
+    .score-label{text-align:center;margin-top:10px;text-transform:uppercase;letter-spacing:2px;color:#6b6b6b}
+    .score-details{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px}
+    .score-detail-item{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:18px}
+    .score-detail-label{font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;color:#6b6b6b;margin-bottom:6px}
+    .score-detail-value{font-size:1.8rem;font-weight:300}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin:30px 0}
+    .stat-card{background:#fff;border:1px solid #e5e5e5;border-radius:16px;padding:24px;text-align:center}
+    .stat-icon{width:56px;height:56px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;font-size:22px}
+    .stat-value{font-size:2.2rem;font-weight:200;margin-bottom:6px}
+    .stat-label{text-transform:uppercase;color:#6b6b6b;font-size:.85rem;letter-spacing:.5px}
+      .rm-list li .rm-note{flex:1}
+    .rm-tags{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+    .rm-tags .tag{font-size:.68rem;padding:2px 8px}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>KOOKAÏ</h1>
+    <div class="subtitle">UX Audit Report</div>
+    <div class="meta-grid">
+      <div class="meta-item"><div class="meta-label">Overall Score</div><div class="meta-value">67/100</div></div>
+      <div class="meta-item"><div class="meta-label">Issues Found</div><div class="meta-value">52</div></div>
+      <div class="meta-item"><div class="meta-label">Guidelines Passed</div><div class="meta-value">156</div></div>
+      <div class="meta-item"><div class="meta-label">Date</div><div class="meta-value">Oct 2025</div></div>
+    </div>
+  </header>
+
+  <nav class="nav">
+    <button class="active" onclick="show('executive-summary', this)">Executive Summary</button>
+    <button onclick="show('priority-issues', this)">Priority Issues</button>
+    <button onclick="show('detailed-findings', this)">Detailed Findings</button>
+    <button onclick="show('implementation-roadmap', this)">Implementation Roadmap</button>
+  </nav>
+
+  <section id="executive-summary" class="active">
+    <h2>Executive Summary</h2>
+    <div class="score-card">
+      <div class="score-main">
+        <div class="score-circle">
+          <svg width="160" height="160"><circle cx="80" cy="80" r="64" class="score-circle-bg"/><circle cx="80" cy="80" r="64" class="score-circle-fill"/></svg>
+          <div class="score-number">67</div>
+        </div>
+        <div class="score-label">Current Performance</div>
+      </div>
+      <div class="score-details">
+        <div class="score-detail-item"><div class="score-detail-label">Guidelines Assessed</div><div class="score-detail-value">206</div></div>
+        <div class="score-detail-item"><div class="score-detail-label">Pass Rate</div><div class="score-detail-value">64%</div></div>
+        <div class="score-detail-item"><div class="score-detail-label">Critical Issues</div><div class="score-detail-value">1</div></div>
+        <div class="score-detail-item"><div class="score-detail-label">Target Score</div><div class="score-detail-value">80+</div></div>
+      </div>
+    </div>
+
+    <h3>Assessment Overview</h3>
+    <p style="font-size:1.05rem;color:#6b6b6b;margin-bottom:20px">This comprehensive UX audit evaluated KOOKAÏ’s experience against 206 Baymard-aligned guidelines. We identified 52 issues across Navigation, Search, PLPs and PDPs. Strengths include strong brand imagery and visual consistency; key gaps are missing social proof, refinement ergonomics, and sizing guidance that suppress conversion and increase returns.</p>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-value">270%</div><div class="stat-label">Potential conversion uplift</div></div>
+      <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-value">25%</div><div class="stat-label">Expected return reduction</div></div>
+      <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-value">3</div><div class="stat-label">Quick win opportunities</div></div>
+      <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-value">Q2</div><div class="stat-label">Target achievement</div></div>
+    </div>
+
+    <h3>Key Opportunity Areas</h3>
+    <div class="card-grid">
+      <div class="card"><div class="badge high">High Impact</div><h3>Social Proof & Trust</h3><p>Launch customer reviews/ratings and UGC to boost purchase confidence and support SEO via review schema.</p></div>
+      <div class="card"><div class="badge high">High Impact</div><h3>Product Discovery</h3><p>Improve filters (counts, chips, sticky controls), quick add/size, and search autocomplete to speed up finding relevant items.</p></div>
+      <div class="card"><div class="badge medium">Medium Impact</div><h3>Purchase Confidence</h3><p>Add size recommendation, stock status, and standardised specs (fabric, care, fit) to reduce uncertainty and cart abandonment.</p></div>
+    </div>
+  </section>
+
+  <section id="priority-issues">
+    <h2>Priority Issues</h2>
+    <div class="card-grid">
+      <div class="card"><div class="badge critical">Critical</div><h3>Customer Reviews Absent</h3><p>No review system implemented; removes crucial social proof and rich snippets.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">15–30% conversion increase</div></div></div>
+      <div class="card"><div class="badge high">High Priority</div><h3>Fit Finder Missing</h3><p>No personalised size guidance; fit uncertainty delays purchase and increases returns.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">+8–12% add‑to‑cart, lower returns</div></div></div>
+      <div class="card"><div class="badge high">High Priority</div><h3>Facet Counts & Chips Missing</h3><p>Users can’t see viable options; no applied‑filter chips or total results count.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">20% faster filtering; lower exits</div></div></div>
+      <div class="card"><div class="badge high">High Priority</div><h3>Quick Add/Size Absent on PLP</h3><p>High‑intent users must detour to PDP; list context lost on back navigation.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">+5–10% ATC rate</div></div></div>
+      <div class="card"><div class="badge high">High Priority</div><h3>No‑Results Recovery Weak</h3><p>Search offers minimal alternatives; high exit risk on failed queries.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">−15% search exits</div></div></div>
+      <div class="card"><div class="badge high">High Priority</div><h3>Filters/Sort Not Sticky (Mobile)</h3><p>Controls scroll away; repeated trips to top slow narrowing.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">Faster list refinement; higher product views</div></div></div>
+      <div class="card"><div class="badge medium">Medium</div><h3>Assurances Not Near CTA</h3><p>Key delivery/returns/threshold info isn’t reiterated by size/CTA.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">Reduce hesitation; +2–4% ATC</div></div></div>
+      <div class="card"><div class="badge medium">Medium</div><h3>Limited Product Media</h3><p>No video/360 for movement/fabric; evaluation friction for dresses.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">Higher engagement; fewer returns</div></div></div>
+      <div class="card"><div class="badge medium">Medium</div><h3>Stock Visibility Not Surfaced</h3><p>No in‑stock only toggle or low‑stock badges on PLP.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">10% fewer dead‑end clicks</div></div></div>
+      <div class="card"><div class="badge medium">Medium</div><h3>Autocomplete Lacks Groups</h3><p>No Trending/Recent/Category groupings with thumbnails.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">Search success +10–15%</div></div></div>
+      <div class="card"><div class="badge medium">Medium</div><h3>Sale Badges & Price Tools</h3><p>No %‑off badges; limited sort; unclear deal value.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">+8–12% Sale CTR</div></div></div>
+      <div class="card"><div class="badge medium">Medium</div><h3>Contrast & Focus States</h3><p>Some labels/badges below WCAG; weak focus outlines.</p><div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">Accessibility compliance; fewer input errors</div></div></div>
+    </div>
+  </section>
+
+  <section id="detailed-findings">
+    <h2>Detailed Findings (52)</h2>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterSeverity('all', this)">All</button>
+      <button class="filter-btn" onclick="filterSeverity('critical', this)">Critical</button>
+      <button class="filter-btn" onclick="filterSeverity('high', this)">High</button>
+      <button class="filter-btn" onclick="filterSeverity('medium', this)">Medium</button>
+      <button class="filter-btn" onclick="filterSeverity('low', this)">Low</button>
+    </div>
+    <div class="outcome-bar">
+      <button class="out-btn active" data-all="true" onclick="toggleOutcome('all', this)">All Outcomes</button>
+      <button class="out-btn" onclick="toggleOutcome('CR', this)">Conversion (CR)</button>
+      <button class="out-btn" onclick="toggleOutcome('ATC', this)">Add‑to‑Cart (ATC)</button>
+      <button class="out-btn" onclick="toggleOutcome('AOV', this)">Average Order Value (AOV)</button>
+      <button class="out-btn" onclick="toggleOutcome('RR', this)">Return Reduction (RR)</button>
+      <button class="out-btn" onclick="toggleOutcome('Engagement', this)">Engagement</button>
+      <button class="out-btn" onclick="toggleOutcome('Clarity', this)">Increased Clarity</button>
+      <button class="out-btn" onclick="toggleOutcome('SEO', this)">SEO CTR</button>
+      <button class="out-btn" onclick="toggleOutcome('A11Y', this)">Accessibility</button>
+      <button class="out-btn" onclick="toggleOutcome('Performance', this)">Performance</button>
+    </div>
+    <div class="card-grid" id="findingsGrid"></div>
+  </section>
+
+  <section id="implementation-roadmap">
+    <h2>Implementation Roadmap</h2>
+    <div class="outcome-bar" id="rmOutcomeBar">
+      <button class="out-btn active" data-all="true" onclick="roadmapToggleOutcome('all', this)">All Outcomes</button>
+      <button class="out-btn" onclick="roadmapToggleOutcome('CR', this)">Conversion (CR)</button>
+      <button class="out-btn" onclick="roadmapToggleOutcome('ATC', this)">Add‑to‑Cart (ATC)</button>
+      <button class="out-btn" onclick="roadmapToggleOutcome('AOV', this)">Average Order Value (AOV)</button>
+      <button class="out-btn" onclick="roadmapToggleOutcome('RR', this)">Return Reduction (RR)</button>
+      <button class="out-btn" onclick="roadmapToggleOutcome('Engagement', this)">Engagement</button>
+      <button class="out-btn" onclick="roadmapToggleOutcome('Clarity', this)">Increased Clarity</button>
+      <button class="out-btn" onclick="roadmapToggleOutcome('SEO', this)">SEO CTR</button>
+      <button class="out-btn" onclick="roadmapToggleOutcome('A11Y', this)">Accessibility</button>
+      <button class="out-btn" onclick="roadmapToggleOutcome('Performance', this)">Performance</button>
+    </div>
+    <div class="roadmap">
+      <div class="rm-timeline" id="rmTimeline">
+        <div class="rm-item">
+          <div class="rm-card">
+            <span class="rm-badge">Quarter 1 · Immediate</span>
+            <div class="rm-title">Foundation & Quick Wins</div>
+            <ul class="rm-list">
+              <li data-outcomes="CR,SEO,Clarity"><span class="rm-note">Deploy customer reviews system (ratings, text, photo uploads) with SEO schema.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">SEO</span><span class="tag">Clarity</span></span></li>
+              <li data-outcomes="CR,Engagement,Clarity"><span class="rm-note">Add filter result counts, applied filter chips and total results on PLPs.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">Engagement</span><span class="tag">Clarity</span></span></li>
+              <li data-outcomes="CR,ATC"><span class="rm-note">Implement stock status indicators and an “In‑stock only” toggle across PLP/PDP.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">ATC</span></span></li>
+              <li data-outcomes="CR,ATC,Clarity"><span class="rm-note">Create reassurance block by the CTA (shipping, returns, thresholds).</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">ATC</span><span class="tag">Clarity</span></span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="rm-item">
+          <div class="rm-card">
+            <span class="rm-badge">Quarter 2 · Short Term</span>
+            <div class="rm-title">Enhanced Discovery</div>
+            <ul class="rm-list">
+              <li data-outcomes="CR,ATC,RR,Clarity"><span class="rm-note">Launch Fit Finder with size memory across PLP/PDP.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">ATC</span><span class="tag">RR</span><span class="tag">Clarity</span></span></li>
+              <li data-outcomes="CR,Engagement"><span class="rm-note">Make Filter/Sort sticky on mobile; preserve scroll position and chips.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">Engagement</span></span></li>
+              <li data-outcomes="CR,Engagement"><span class="rm-note">Improve Search: grouped autocomplete and strong no‑results recovery.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">Engagement</span></span></li>
+              <li data-outcomes="CR,RR,Engagement"><span class="rm-note">Enrich product media with short video / 360°; standardise fabric & care fields.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">RR</span><span class="tag">Engagement</span></span></li>
+              <li data-outcomes="CR,ATC"><span class="rm-note">Enable Quick Add with size on PLP cards.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">ATC</span></span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="rm-item">
+          <div class="rm-card">
+            <span class="rm-badge">Quarter 3 · Optimisation</span>
+            <div class="rm-title">Performance & Accessibility</div>
+            <ul class="rm-list">
+              <li data-outcomes="Performance,SEO"><span class="rm-note">Serve AVIF/WebP with responsive <code>srcset</code>; extend caching and lazy‑loading.</span><span class="rm-tags"><span class="tag">Performance</span><span class="tag">SEO</span></span></li>
+              <li data-outcomes="Performance"><span class="rm-note">Reduce CLS via aspect‑ratio boxes; defer non‑critical JS.</span><span class="rm-tags"><span class="tag">Performance</span></span></li>
+              <li data-outcomes="A11Y,Clarity"><span class="rm-note">Address WCAG: contrast, focus styles, accessible labels and form errors.</span><span class="rm-tags"><span class="tag">A11Y</span><span class="tag">Clarity</span></span></li>
+              <li data-outcomes="CR,Engagement,Clarity"><span class="rm-note">Introduce %‑off badges and price sort for Sale; variant price preview on swatch change.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">Engagement</span><span class="tag">Clarity</span></span></li>
+              <li data-outcomes="CR,ATC"><span class="rm-note">Add store availability filter and local stock badges when location is known.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">ATC</span></span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="rm-item">
+          <div class="rm-card">
+            <span class="rm-badge">Quarter 4 · Strategic</span>
+            <div class="rm-title">Personalisation & AOV Growth</div>
+            <ul class="rm-list">
+              <li data-outcomes="AOV,CR"><span class="rm-note">Outfit bundles and “Style it with” bundle‑add on PDP; smarter related items.</span><span class="rm-tags"><span class="tag">AOV</span><span class="tag">CR</span></span></li>
+              <li data-outcomes="CR,Engagement"><span class="rm-note">Personalised home/PLP ordering using affinities (size, colour, category).</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">Engagement</span></span></li>
+              <li data-outcomes="CR,Engagement"><span class="rm-note">Shoppable editorial modules on New Arrivals and content pages.</span><span class="rm-tags"><span class="tag">CR</span><span class="tag">Engagement</span></span></li>
+              <li data-outcomes="Clarity,CR,SEO"><span class="rm-note">Synonyms & spell‑correction tuning; analytics instrumentation for filter/search usage.</span><span class="rm-tags"><span class="tag">Clarity</span><span class="tag">CR</span><span class="tag">SEO</span></span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // --- Data ---------------------------------------------------------------
+    const findings = [
+      // PDP (16)
+      {sev:'critical',title:'Customer Reviews Missing',desc:'Implement reviews/Q&A with schema; show star summary near price/CTA.',impact:'15–30% conversion increase',outcomes:['CR','SEO','Clarity']},
+      {sev:'high',title:'No Personalised Size Recommendation',desc:'Add Fit Finder and persist recommendation across PLP/PDP.',impact:'+8–12% ATC; lower returns',outcomes:['CR','ATC','RR','Clarity']},
+      {sev:'medium',title:'Assurances not reiterated near CTA',desc:'Add concise shipping/returns/threshold block beside size + CTA.',impact:'Reduce hesitation; +2–4% ATC',outcomes:['CR','ATC','Clarity']},
+      {sev:'medium',title:'Limited media (no video/360)',desc:'Add short looped video/360; lazy‑load thumbnails.',impact:'Higher engagement; fewer size‑related returns',outcomes:['CR','Engagement','RR']},
+      {sev:'medium',title:'Fabric & care details not standardised',desc:'Use consistent fields (fabric %, lining, care icons).',impact:'Faster evaluation; fewer returns',outcomes:['CR','Clarity','RR']},
+      {sev:'low',title:'Model info not tied to selected size',desc:'State model height/size and link to size selection.',impact:'Clarity for fit expectations',outcomes:['Clarity']},
+      {sev:'low',title:'Variant naming clarity',desc:'Show colour names on hover/tap; indicate # of colours.',impact:'Reduce confusion',outcomes:['Clarity']},
+      {sev:'low',title:'Deep zoom not available',desc:'Enable high‑res zoom for fabric texture/stitching.',impact:'Confidence in quality',outcomes:['Engagement','Clarity']},
+      {sev:'low',title:'Store availability not surfaced inline',desc:'Indicate nearest store stock; streamline Find in Store.',impact:'Fewer dead ends',outcomes:['CR','ATC']},
+      {sev:'low',title:'Recently viewed limited',desc:'Persist last 12 items with titles/sizes across sessions.',impact:'Re‑entry boost',outcomes:['Engagement']},
+      {sev:'low',title:'Wishlist affordance subtle',desc:'Labelled button + feedback; allow pre‑login add.',impact:'Saves; demand capture',outcomes:['Engagement','CR']},
+      {sev:'medium',title:'OOS notify lacks alternatives',desc:'When OOS, suggest in‑stock variants and nearby stores.',impact:'Recovery of OOS demand',outcomes:['CR','ATC']},
+      {sev:'low',title:'Breadcrumbs inconsistent',desc:'Ensure path reflects navigation and is tappable.',impact:'Wayfinding clarity',outcomes:['Clarity']},
+      {sev:'medium',title:'Cross‑sell module too narrow',desc:'Add outfit bundles with one‑tap bundle add.',impact:'+AOV via complementary items',outcomes:['AOV','CR']},
+      {sev:'low',title:'Size guide unit toggle persistence',desc:'Persist CM/IN choice and highlight selection.',impact:'Lower friction',outcomes:['Clarity']},
+      {sev:'low',title:'Sustainability/material provenance',desc:'Add sourcing/sustainability notes where relevant.',impact:'Trust; brand value',outcomes:['Clarity','Engagement']},
+
+      // PLP (16)
+      {sev:'high',title:'Facet counts & applied chips missing',desc:'Show counts; pin chips with Clear All and total results.',impact:'20% faster filtering; lower exits',outcomes:['CR','Engagement','Clarity']},
+      {sev:'high',title:'No quick add/size on cards',desc:'Enable quick‑add with size; remember last size.',impact:'+5–10% ATC',outcomes:['CR','ATC']},
+      {sev:'high',title:'Sticky Filter/Sort absent on mobile',desc:'Sticky bottom bar + active chips.',impact:'Faster refinement',outcomes:['CR','Engagement']},
+      {sev:'medium',title:'Stock visibility not surfaced',desc:'Add in‑stock/OOS badges and an "In‑stock only" toggle.',impact:'10% fewer dead‑end clicks',outcomes:['CR','ATC']},
+      {sev:'low',title:'Sort lacks price ↑/↓ & discount',desc:'Provide Price ASC/DESC and Discount % (Sale).',impact:'Deal clarity',outcomes:['Clarity','Engagement']},
+      {sev:'low',title:'Pagination/progress cues minimal',desc:'Use Load More with count or pagination (x of y).',impact:'Orientation',outcomes:['Engagement','Clarity']},
+      {sev:'medium',title:'Colour swatch affordance weak',desc:'Show colour name on hover/tap; "+N colours" badge.',impact:'Variant clarity',outcomes:['Clarity']},
+      {sev:'low',title:'Hover alt image inconsistent',desc:'Ensure alternate view on hover for quick scan.',impact:'Evaluation speed',outcomes:['Engagement']},
+      {sev:'low',title:'Store availability filter missing',desc:'Allow filter by in‑store stock when location known.',impact:'Local conversion',outcomes:['CR','ATC']},
+      {sev:'medium',title:'Sale PLP lacks % off badges',desc:'Show discount %; consistent price treatment.',impact:'Higher sale engagement',outcomes:['CR','Engagement']},
+      {sev:'medium',title:'New Arrivals hero pushes grid (mobile)',desc:'Immediate grid preview/shop strip + refinement.',impact:'Faster shopping start',outcomes:['CR','Engagement']},
+      {sev:'medium',title:'Size facet lacks in‑stock counts',desc:'Show counts next to each size; in‑stock only toggle.',impact:'Avoid dead ends',outcomes:['CR','Engagement']},
+      {sev:'low',title:'Filter drawer lacks local Reset',desc:'Provide local Reset and global Clear All.',impact:'Undo safety',outcomes:['Clarity']},
+      {sev:'low',title:'Result total not visible',desc:'Display 1–48 of 213 above grid.',impact:'Expectations set',outcomes:['Clarity']},
+      {sev:'low',title:'Variant price doesn’t reflect swatch change',desc:'Update price preview when variant differs.',impact:'Price clarity',outcomes:['Clarity']},
+      {sev:'low',title:'Breadcrumb/heading visibility weak',desc:'Keep category label sticky at top of grid.',impact:'Wayfinding',outcomes:['Clarity']},
+
+      // Search & Navigation (10)
+      {sev:'high',title:'No‑results recovery weak',desc:'Did‑you‑mean, trending queries, category pivots, bestsellers.',impact:'−15% search exits',outcomes:['CR','Engagement']},
+      {sev:'medium',title:'Autocomplete lacks grouped suggestions',desc:'Group Recent/Trending/Categories/Top Products with thumbs.',impact:'+10–15% search success',outcomes:['CR','Engagement']},
+      {sev:'medium',title:'Synonyms not handled (e.g., "gown")',desc:'Add synonym dictionary and redirect rules.',impact:'Better recall',outcomes:['CR','SEO']},
+      {sev:'medium',title:'Misspelling tolerance limited',desc:'Fuzzy matching & keyboard‑proximity handling.',impact:'Resilient search',outcomes:['CR','Engagement']},
+      {sev:'low',title:'Result‑type toggles missing',desc:'Switch between products and content/help pages.',impact:'Task completion',outcomes:['Clarity']},
+      {sev:'low',title:'Mobile mega‑menu lacks fast links',desc:'Add quick links to top filtered lists.',impact:'Quicker entry',outcomes:['Engagement']},
+      {sev:'low',title:'Breadcrumb clarity on PLP',desc:'Keep category name prominent and tappable.',impact:'Orientation',outcomes:['Clarity']},
+      {sev:'low',title:'Sticky header overlap small screens',desc:'Reduce header on scroll; content offset.',impact:'No occlusion',outcomes:['Clarity','A11Y']},
+      {sev:'low',title:'Currency/region context unclear',desc:'Clarify currency + shipping regions selection.',impact:'Fewer surprises',outcomes:['Clarity','CR']},
+      {sev:'medium',title:'Chat/cart overlays can overlap PDP',desc:'Offset/delay overlays; easy dismiss.',impact:'Fewer interruptions',outcomes:['Engagement','Clarity']},
+
+      // Landing / Content (4)
+      {sev:'medium',title:'Overlays obstruct Katalyst Foundation page',desc:'Suppress commercial overlays; focus readability/trust.',impact:'Brand trust; lower exits',outcomes:['Clarity','Engagement']},
+      {sev:'medium',title:'New Arrivals needs shoppable entry',desc:'Add shop strip or immediate grid preview below hero.',impact:'Faster discovery',outcomes:['CR','Engagement']},
+      {sev:'low',title:'Sale landing lacks key filters',desc:'Pre‑expose Price, Size, Colour, Discount %.',impact:'Deal findability',outcomes:['CR','Engagement']},
+      {sev:'low',title:'Editorial images missing alt text',desc:'Ensure descriptive alt text for SEO & accessibility.',impact:'Compliance; SEO',outcomes:['SEO','A11Y']},
+
+      // Accessibility (6)
+      {sev:'medium',title:'Colour contrast issues',desc:'Meet WCAG 2.1 AA for text/controls; fix grey on white.',impact:'Readability; compliance',outcomes:['A11Y','Clarity']},
+      {sev:'medium',title:'Weak keyboard focus visibility',desc:'Clear focus outlines on links/buttons/swatches/tabs.',impact:'Keyboard access',outcomes:['A11Y']},
+      {sev:'medium',title:'Keyboard trap in filter drawer',desc:'Trap focus in modal; ESC closes; return focus to trigger.',impact:'Usability; a11y',outcomes:['A11Y']},
+      {sev:'low',title:'Icons lack accessible labels',desc:'Add aria‑labels for heart/share/cart and swatches.',impact:'Screen reader clarity',outcomes:['A11Y']},
+      {sev:'low',title:'Heading hierarchy inconsistencies',desc:'Single H1; logical H2/H3 order.',impact:'Assistive tech navigation',outcomes:['A11Y','SEO']},
+      {sev:'medium',title:'Notify‑me form labels',desc:'Programmatic labels and error messaging on inputs.',impact:'Form success',outcomes:['A11Y','CR']},
+
+      // Performance (4)
+      {sev:'medium',title:'Large images / missing modern formats',desc:'Serve AVIF/WebP with responsive srcset; compress & cache.',impact:'Faster loads; better LCP',outcomes:['Performance','SEO']},
+      {sev:'low',title:'Lazy‑loading not applied to all assets',desc:'Lazy‑load below‑fold PLP thumbs and PDP gallery.',impact:'Bandwidth savings',outcomes:['Performance']},
+      {sev:'medium',title:'Cumulative Layout Shift risk',desc:'Reserve aspect‑ratio boxes; defer non‑critical JS.',impact:'Stability; better CLS',outcomes:['Performance']},
+      {sev:'low',title:'Cache policy for PDP assets',desc:'Long‑lived cache with content hashing.',impact:'Repeat view speed',outcomes:['Performance']}
+    ];
+
+    // --- Rendering ---------------------------------------------------------
+    function renderFindings(list){
+      const grid=document.getElementById('findingsGrid');
+      grid.innerHTML='';
+      list.forEach(f=>{
+        const card=document.createElement('div');
+        card.className='card';
+        const tags=(f.outcomes||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+        card.innerHTML=
+          `<div class="badge ${f.sev}">${f.sev.charAt(0).toUpperCase()+f.sev.slice(1)}</div>
+           <h3>${f.title}</h3>
+           <p>${f.desc}</p>
+           <div class="impact-box"><div class="impact-title">Expected Impact</div><div class="impact-value">${f.impact}</div></div>
+           <div class="tags">${tags}</div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    // --- Filters -----------------------------------------------------------
+    let selectedSev = 'all';
+    let selectedOutcomes = new Set();
+
+    function filterSeverity(sev,btn){
+      selectedSev = sev;
+      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    }
+
+    function toggleOutcome(key,btn){
+      if(key==='all'){
+        selectedOutcomes.clear();
+        document.querySelectorAll('.outcome-bar .out-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+      } else {
+        // turn off "All" if selecting a specific tag
+        const allBtn=document.querySelector('.outcome-bar .out-btn[data-all]');
+        if(allBtn) allBtn.classList.remove('active');
+        if(selectedOutcomes.has(key)){
+          selectedOutcomes.delete(key); btn.classList.remove('active');
+        } else {selectedOutcomes.add(key); btn.classList.add('active');}
+        // if nothing selected, revert to All
+        if(selectedOutcomes.size===0 && allBtn){ allBtn.classList.add('active'); }
+      }
+      applyFilters();
+    }
+
+    function applyFilters(){
+      let list = findings.slice();
+      if(selectedSev!=='all') list=list.filter(f=>f.sev===selectedSev);
+      if(selectedOutcomes.size>0){
+        list=list.filter(f=>f.outcomes && f.outcomes.some(o=>selectedOutcomes.has(o)));
+      }
+      renderFindings(list);
+    }
+
+    // --- Navigation --------------------------------------------------------
+    function show(id,btn){
+      document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    // Initial render + simple tests
+    renderFindings(findings);
+
+    // --- Lightweight Tests (console) --------------------------------------
+    console.assert(typeof show === 'function', 'show() should be defined');
+    console.assert(typeof filterSeverity === 'function', 'filterSeverity() should be defined');
+    console.assert(typeof toggleOutcome === 'function', 'toggleOutcome() should be defined');
+    (function testFilters(){
+      const before=document.getElementById('findingsGrid').children.length;
+      filterSeverity('high', document.querySelectorAll('.filter-btn')[2]);
+      const afterHigh=document.getElementById('findingsGrid').children.length;
+      console.assert(afterHigh>0 && afterHigh<=before, 'High severity filter should reduce or equal results');
+      // Outcome filter (AOV)
+      toggleOutcome('AOV', document.querySelector(".outcome-bar .out-btn:nth-child(4)"));
+      const afterAOV=document.getElementById('findingsGrid').children.length;
+      console.assert(afterAOV>0, 'Outcome AOV should produce some results');
+      // Reset
+      filterSeverity('all', document.querySelectorAll('.filter-btn')[0]);
+      toggleOutcome('all', document.querySelector('.outcome-bar .out-btn[data-all]'));
+    })();
+      // Roadmap filtering by outcomes
+    let selectedRmOutcomes = new Set();
+    function roadmapToggleOutcome(key,btn){
+      if(key==='all'){
+        selectedRmOutcomes.clear();
+        document.querySelectorAll('#rmOutcomeBar .out-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+      } else {
+        const allBtn=document.querySelector('#rmOutcomeBar .out-btn[data-all]');
+        if(allBtn) allBtn.classList.remove('active');
+        if(selectedRmOutcomes.has(key)){selectedRmOutcomes.delete(key); btn.classList.remove('active');}
+        else {selectedRmOutcomes.add(key); btn.classList.add('active');}
+        if(selectedRmOutcomes.size===0 && allBtn){allBtn.classList.add('active');}
+      }
+      applyRoadmapFilters();
+    }
+    function applyRoadmapFilters(){
+      const items=document.querySelectorAll('#rmTimeline .rm-list li');
+      if(selectedRmOutcomes.size===0){items.forEach(li=>li.style.display='flex');return;}
+      items.forEach(li=>{
+        const outcomes=(li.getAttribute('data-outcomes')||'').split(',').map(s=>s.trim());
+        const match=outcomes.some(o=>selectedRmOutcomes.has(o));
+        li.style.display=match?'flex':'none';
+      });
+    }
+  </script>
+</body>
+</html>
