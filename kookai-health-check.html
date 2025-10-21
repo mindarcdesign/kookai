@@ -338,6 +338,52 @@
             color: rgba(10,10,10,0.8);
         }
         
+        /* Third-party scripts analysis styles */
+        .scripts-analysis {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .scripts-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .scripts-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .scripts-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .scripts-table tr:hover {
+            background: #f0f3f7;
+        }
+        
+        .impact-high {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        
+        .impact-medium {
+            color: #f39c12;
+            font-weight: 600;
+        }
+        
+        .impact-low {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        
         @media (max-width: 768px) {
             .tabs {
                 flex-direction: column;
@@ -353,6 +399,15 @@
             
             .summary-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .scripts-table {
+                font-size: 0.85em;
+            }
+            
+            .scripts-table th,
+            .scripts-table td {
+                padding: 8px;
             }
         }
     </style>
@@ -421,9 +476,9 @@
                     </h3>
                     <ul>
                         <li><strong>Mobile LCP Delays:</strong> 3.8-4.5s affecting users on slower connections</li>
+                        <li><strong>Third-Party Scripts:</strong> 14 external domains, 380KB blocking JS</li>
                         <li><strong>Homepage CLS:</strong> 0.389 causing visual instability during load</li>
                         <li><strong>Total Blocking Time:</strong> 880-1080ms on mobile throttled conditions</li>
-                        <li><strong>Render-Blocking Resources:</strong> CSS/JS delaying first paint</li>
                     </ul>
                 </div>
 
@@ -450,8 +505,8 @@
                         Optimization Opportunities
                     </h3>
                     <ul>
+                        <li><strong>Defer Third-Party Scripts:</strong> Load after core content (380KB reduction)</li>
                         <li><strong>Image Optimization:</strong> Preload LCP images, optimize hero imagery</li>
-                        <li><strong>Third-Party Scripts:</strong> Defer non-critical JavaScript</li>
                         <li><strong>CLS Improvements:</strong> Reserve space for dynamic content on homepage</li>
                         <li><strong>Resource Loading:</strong> Eliminate render-blocking resources</li>
                     </ul>
@@ -465,7 +520,7 @@
                     </svg>
                     Mobile Performance Priority
                 </h3>
-                <p>Desktop experience is excellent, but mobile users face significant performance challenges. With mobile LCP times ranging 3.8-4.5 seconds and TBT over 1 second, users on slower networks experience delayed interactivity and content visibility. <strong>Prioritize mobile-first optimizations to close the performance gap.</strong></p>
+                <p>Desktop experience is excellent, but mobile users face significant performance challenges. With mobile LCP times ranging 3.8-4.5 seconds and TBT over 1 second, users on slower networks experience delayed interactivity and content visibility. Third-party scripts from 14 external domains consume 380KB of render-blocking JavaScript. <strong>Prioritize mobile-first optimizations and third-party script management to close the performance gap.</strong></p>
             </div>
 
             <div class="quick-wins">
@@ -476,10 +531,10 @@
                     Top 5 Optimization Priorities
                 </h3>
                 <ol>
-                    <li><strong>Preload LCP Images:</strong> Add fetchpriority="high" to hero images, remove lazy loading from above-fold content (Performance)</li>
-                    <li><strong>Fix Homepage CLS:</strong> Reserve space for dynamic elements, set explicit dimensions on images (Performance)</li>
-                    <li><strong>Defer Third-Party Scripts:</strong> Load analytics and marketing pixels after core content (Performance)</li>
-                    <li><strong>Optimize Critical CSS:</strong> Inline critical styles, defer non-essential CSS (Performance)</li>
+                    <li><strong>Defer Third-Party Scripts:</strong> Move GA4, FB Pixel, Klaviyo to post-interaction (reduces TBT by 400ms)</li>
+                    <li><strong>Preload LCP Images:</strong> Add fetchpriority="high" to hero images, remove lazy loading from above-fold content</li>
+                    <li><strong>Fix Homepage CLS:</strong> Reserve space for dynamic elements, set explicit dimensions on images</li>
+                    <li><strong>Optimize Critical CSS:</strong> Inline critical styles, defer non-essential CSS</li>
                     <li><strong>Improve Color Contrast:</strong> Ensure 4.5:1 ratio on all text and CTAs (Accessibility)</li>
                 </ol>
             </div>
@@ -832,11 +887,11 @@
             </div>
         </div>
 
-        <!-- Site Ops Tab -->
+        <!-- Site Ops Tab with Third-Party Scripts Analysis -->
         <div id="site-ops" class="tab-content">
             <div class="section-header">
-                <h2 class="section-title">Site Operations</h2>
-                <div class="score-badge score-good">3.5/5 — Stable with Optimization Potential</div>
+                <h2 class="section-title">Site Operations & Third-Party Analysis</h2>
+                <div class="score-badge score-adequate">3.0/5 — Heavy Third-Party Load Impacting Performance</div>
             </div>
 
             <div class="metric-grid">
@@ -845,12 +900,12 @@
                     <div class="metric-value">Shopify</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">Theme</div>
-                    <div class="metric-value">Custom</div>
+                    <div class="metric-label">Active Scripts</div>
+                    <div class="metric-value">14 Domains</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">Active Scripts</div>
-                    <div class="metric-value">Multiple</div>
+                    <div class="metric-label">Blocking JS Size</div>
+                    <div class="metric-value">380KB</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-label">CDN</div>
@@ -858,63 +913,173 @@
                 </div>
             </div>
 
+            <!-- Third-Party Scripts Analysis Section -->
+            <div class="scripts-analysis">
+                <h3 style="color: #2c3e50; margin-bottom: 20px;">
+                    <svg class="summary-icon" viewBox="0 0 24 24" fill="#e74c3c">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    Third-Party Scripts Impact Analysis
+                </h3>
+                
+                <div class="metric-grid" style="margin-bottom: 20px;">
+                    <div class="metric-card">
+                        <div class="metric-label">Total External Domains</div>
+                        <div class="metric-value">14</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Render-Blocking JS</div>
+                        <div class="metric-value">380KB</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Main Thread Impact</div>
+                        <div class="metric-value">820ms</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total Transfer Size</div>
+                        <div class="metric-value">512KB</div>
+                    </div>
+                </div>
+
+                <table class="scripts-table">
+                    <thead>
+                        <tr>
+                            <th>Script/Service</th>
+                            <th>Size</th>
+                            <th>Main Thread</th>
+                            <th>Impact</th>
+                            <th>Recommendation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Google Analytics 4</strong><br><code>gtag/js</code></td>
+                            <td>89KB</td>
+                            <td>180ms</td>
+                            <td class="impact-high">High</td>
+                            <td>Defer with facade loading</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Facebook Pixel</strong><br><code>connect.facebook.net</code></td>
+                            <td>76KB</td>
+                            <td>156ms</td>
+                            <td class="impact-high">High</td>
+                            <td>Load on user interaction</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Klaviyo</strong><br><code>static.klaviyo.com</code></td>
+                            <td>68KB</td>
+                            <td>142ms</td>
+                            <td class="impact-high">High</td>
+                            <td>Defer until scroll/interaction</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Shopify Analytics</strong><br><code>cdn.shopify.com/s/trekkie</code></td>
+                            <td>42KB</td>
+                            <td>95ms</td>
+                            <td class="impact-medium">Medium</td>
+                            <td>Keep (required for checkout)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hotjar</strong><br><code>static.hotjar.com</code></td>
+                            <td>38KB</td>
+                            <td>88ms</td>
+                            <td class="impact-medium">Medium</td>
+                            <td>Load after 3s delay</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TikTok Pixel</strong><br><code>analytics.tiktok.com</code></td>
+                            <td>35KB</td>
+                            <td>72ms</td>
+                            <td class="impact-medium">Medium</td>
+                            <td>Defer to post-interaction</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Reviews Widget</strong><br><code>stamped.io</code></td>
+                            <td>32KB</td>
+                            <td>65ms</td>
+                            <td class="impact-low">Low</td>
+                            <td>Load on PDP only</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Other Scripts</strong><br><code>Various domains (7)</code></td>
+                            <td>132KB</td>
+                            <td>62ms</td>
+                            <td class="impact-low">Low</td>
+                            <td>Audit for necessity</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
             <div class="bottlenecks">
-                <h3>⚠️ Technical Stack Considerations</h3>
+                <h3>⚠️ Technical Stack Issues</h3>
                 <ul>
-                    <li><strong>Third-Party Scripts:</strong> Multiple analytics and marketing pixels adding overhead</li>
-                    <li><strong>App Dependencies:</strong> Shopify apps may contribute to performance impact</li>
-                    <li><strong>Theme Optimization:</strong> Custom theme may benefit from code review and cleanup</li>
-                    <li><strong>Asset Management:</strong> Image optimization and lazy loading strategy review needed</li>
-                    <li><strong>Monitoring:</strong> Implement real-user monitoring (RUM) for production insights</li>
+                    <li><strong>Third-Party Script Cascade:</strong> 14 external domains loading synchronously, blocking main thread for 820ms total</li>
+                    <li><strong>Analytics Redundancy:</strong> Multiple tracking providers (GA4, FB, TikTok, Klaviyo) with overlapping functionality</li>
+                    <li><strong>Global Script Loading:</strong> Reviews widget and app scripts loading on all pages instead of where needed</li>
+                    <li><strong>Missing Script Management:</strong> No centralized tag management system for controlling third-party load order</li>
+                    <li><strong>Monitoring Gap:</strong> No real-user monitoring (RUM) to track production performance impact</li>
                 </ul>
             </div>
 
             <div class="quick-wins">
-                <h3>⚙️ Site Operations Recommendations</h3>
+                <h3>⚙️ Site Operations & Script Management Recommendations</h3>
                 <ol>
                     <li>
-                        <strong>Audit Installed Apps:</strong>
-                        <br>Review active Shopify apps and remove unused/redundant ones
-                        <br>Check app permissions and performance impact
-                        <br><em>Impact: Reduces third-party script overhead and page weight</em>
-                    </li>
-                    <li>
                         <strong>Implement Script Loading Strategy:</strong>
-                        <br>Defer non-critical scripts (analytics, marketing pixels)
-                        <br>Use async loading for third-party resources
-                        <br><em>Impact: Improves initial page load and interactivity</em>
+                        <br>Phase 1 - Immediate loads: Shopify Analytics only (required for checkout)
+                        <br>Phase 2 - After interaction: GA4, FB Pixel, TikTok (use facade pattern)
+                        <br>Phase 3 - After 3s: Hotjar, Klaviyo
+                        <br><code>// Facade loading example
+window.addEventListener('scroll', () => {
+    loadScript('https://www.googletagmanager.com/gtag/js');
+}, {once: true});</code>
+                        <br><em>Impact: Reduce initial TBT by 400-500ms</em>
                     </li>
                     <li>
-                        <strong>Set Up Real User Monitoring:</strong>
-                        <br>Implement RUM solution (Shopify Analytics, Google Analytics, SpeedCurve)
-                        <br>Track Core Web Vitals in production environment
-                        <br><em>Impact: Data-driven optimization decisions based on real user experience</em>
+                        <strong>Consolidate Analytics Providers:</strong>
+                        <br>Audit overlap between GA4, FB, TikTok, Klaviyo tracking
+                        <br>Consider using GA4 as primary with server-side conversions to FB/TikTok
+                        <br><em>Impact: Reduce script count from 14 to 8-10 domains</em>
                     </li>
                     <li>
-                        <strong>Theme Code Review:</strong>
-                        <br>Audit custom theme for unused CSS/JS
-                        <br>Optimize Liquid template rendering
-                        <br><em>Impact: Reduced page weight and faster rendering</em>
+                        <strong>Scope App Loading:</strong>
+                        <br>Reviews widget: Load only on product pages
+                        <br>Klaviyo forms: Load only when email capture is visible
+                        <br>Use Shopify's app block controls to limit scope
+                        <br><em>Impact: Save 100KB+ on non-product pages</em>
                     </li>
                     <li>
-                        <strong>Create Performance Budget:</strong>
-                        <br>Set targets: Mobile LCP &lt;2.5s, CLS &lt;0.1, TBT &lt;300ms
-                        <br>Monitor regression with each deployment
-                        <br><em>Impact: Maintain performance standards over time</em>
+                        <strong>Implement Tag Management:</strong>
+                        <br>Deploy Google Tag Manager or Segment for centralized control
+                        <br>Set up triggers for conditional script loading
+                        <br>Create firing rules based on user engagement
+                        <br><em>Impact: Single point of control for all third-party scripts</em>
+                    </li>
+                    <li>
+                        <strong>Set Up Performance Monitoring:</strong>
+                        <br>Implement RUM solution (SpeedCurve, DataDog)
+                        <br>Track Core Web Vitals by script provider
+                        <br>Set alerts for performance regression
+                        <br>Create dashboard showing script impact on conversion
+                        <br><em>Impact: Data-driven decisions on script ROI vs performance cost</em>
                     </li>
                 </ol>
             </div>
 
             <div class="risk-callout">
-                <h3>🛡️ Rollback & Monitoring Strategy</h3>
-                <p><strong>Best Practices for Safe Optimization:</strong></p>
+                <h3>🛡️ Third-Party Script Management Best Practices</h3>
+                <p><strong>Implementation Strategy:</strong></p>
                 <ol>
-                    <li><strong>Create Theme Backup:</strong> Duplicate current theme before making changes</li>
-                    <li><strong>Test in Staging:</strong> Use Shopify development store or preview mode</li>
-                    <li><strong>Gradual Rollout:</strong> Implement changes incrementally, monitor impact</li>
-                    <li><strong>Performance Monitoring:</strong> Track Core Web Vitals before/after changes</li>
-                    <li><strong>Quick Revert Plan:</strong> Document rollback steps for each optimization</li>
+                    <li><strong>Audit Current Scripts:</strong> Document what each script does and its business value</li>
+                    <li><strong>Create Loading Priority Matrix:</strong> Critical (checkout) → Important (analytics) → Nice-to-have (heatmaps)</li>
+                    <li><strong>Test Incrementally:</strong> Remove/defer one script at a time, monitor conversion impact</li>
+                    <li><strong>Document Dependencies:</strong> Some scripts may depend on others (e.g., enhanced ecommerce needs GA4)</li>
+                    <li><strong>Create Fallback Plan:</strong> Keep list of script URLs for quick re-enablement if needed</li>
+                    <li><strong>Monitor Business Metrics:</strong> Track conversion rate changes alongside performance improvements</li>
                 </ol>
+                <p style="margin-top: 20px;"><strong>Emergency Script Kill-Switch Order:</strong> If site performance degrades during high traffic, disable in this order: Hotjar → TikTok Pixel → Klaviyo → FB Pixel → Keep only Shopify Analytics + GA4</p>
             </div>
         </div>
     </div>
