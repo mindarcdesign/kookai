@@ -575,8 +575,11 @@
             <div class="bottlenecks">
                 <h3>🚫 Common Issues Across All Stores</h3>
                 <ul>
-                    <li><strong>DOM Size:</strong> 1,328-1,544 elements (recommend &lt;1,000)</li>
-                    <li><strong>Back/Forward Cache:</strong> 2 failure reasons preventing bfcache restoration</li>
+                    <<li><strong>Color Contrast:</strong> Some text elements may not meet WCAG AA 4.5:1 ratio</li>
+                    <li><strong>Form Labels:</strong> Ensure all inputs have associated labels or aria-labels</li>
+                    <li><strong>Interactive Element Names:</strong> Icon-only buttons may lack accessible names</li>
+                    <li><strong>Focus Indicators:</strong> Ensure visible focus states on all interactive elements</li>
+                    <li><strong>Alt Text Quality:</strong> Product images need descriptive alt text</li>>
                     <li><strong>Font Loading:</strong> 3 fonts causing FOIT/FOUT issues</li>
                     <li><strong>Critical Request Chains:</strong> 34 chained requests detected</li>
                 </ul>
@@ -586,9 +589,11 @@
                 <h3>♿ Accessibility Quick Wins</h3>
                 <ol>
                     <li><strong>Font Display Swap:</strong> Add <code>font-display: swap</code> to prevent invisible text</li>
-                    <li><strong>Reduce DOM Size:</strong> Simplify page structure, remove unused elements</li>
-                    <li><strong>Fix bfcache Issues:</strong> Address cache restoration blockers for faster back navigation</li>
-                    <li><strong>Break Request Chains:</strong> Preload critical resources, reduce dependency chains</li>
+                    <li><strong>Improve Color Contrast:</strong> Audit and adjust text colors to 4.5:1 ratio minimum</li>
+                    <li><strong>Add Accessible Names:</strong> <code>aria-label</code> on icon buttons (cart, wishlist, search)</li>
+                    <li><strong>Form Label Association:</strong> Connect all labels to inputs with <code>for</code> attribute</li>
+                    <li><strong>Enhance Alt Text:</strong> Use descriptive product descriptions, not filenames</li>
+                    <li><strong>Add Skip Links:</strong> Allow keyboard users to bypass navigation</li>
                 </ol>
             </div>
         </div>
