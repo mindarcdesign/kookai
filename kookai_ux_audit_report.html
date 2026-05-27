@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UX Audit Report</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --c-bg:#f7f7f5;--c-white:#fff;--c-border:#e4e4e0;--c-text:#1a1a1a;--c-muted:#6b6b6b;
+    --c-poor:#b91c1c;--c-mediocre:#c2410c;--c-fair:#d97706;--c-decent:#ca8a04;--c-good:#4d7c0f;
+    --c-violation-high:#b91c1c;--c-violation-low:#c2410c;--c-neutral:#6b7280;
+    --c-adhered-low:#4d7c0f;--c-adhered-high:#15803d;
+    --c-accent:#7c3aed;--c-accent-bg:#ede9fe;
+    --sidebar:300px;--detail:480px;
+  }
+  html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--c-text);background:var(--c-bg)}
+
+  /* ── TOP BAR ── */
+  .topbar{display:flex;align-items:center;gap:12px;padding:0 24px;height:52px;background:var(--c-white);border-bottom:1px solid var(--c-border);position:sticky;top:0;z-index:100}
+  .topbar-logo{font-size:22px;font-weight:700;letter-spacing:-0.5px;color:var(--c-text)}
+  .topbar-site{font-size:13px;color:var(--c-muted);margin-left:4px}
+  .topbar-date{font-size:12px;color:var(--c-muted);margin-left:auto}
+  .btn-export{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--c-text);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s}
+  .btn-export:hover{opacity:.85}
+
+  /* ── SECTION TABS ── */
+  .tabs{display:flex;align-items:center;gap:0;padding:0 24px;background:var(--c-white);border-bottom:1px solid var(--c-border);overflow-x:auto}
+  .tab{padding:12px 18px;font-size:13px;font-weight:500;color:var(--c-muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s}
+  .tab:hover{color:var(--c-text)}
+  .tab.active{color:var(--c-text);border-bottom-color:var(--c-text)}
+  .tab-score{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:99px;font-size:11px;font-weight:600}
+  .tab-score.poor{background:#fee2e2;color:var(--c-poor)}
+  .tab-score.mediocre{background:#ffedd5;color:var(--c-mediocre)}
+  .tab-score.decent{background:#fef9c3;color:var(--c-decent)}
+  .tab-score.good{background:#dcfce7;color:var(--c-good)}
+
+  /* ── PAGES ── */
+  .page{display:none}.page.active{display:block}
+
+  /* ══════════════════════════════════════
+     OVERVIEW PAGE
+  ══════════════════════════════════════ */
+  .overview{max-width:1100px;margin:0 auto;padding:40px 24px}
+  .overview-title{font-size:26px;font-weight:700;margin-bottom:4px}
+  .overview-title span{color:var(--c-muted);font-weight:400}
+  .overview-meta{font-size:13px;color:var(--c-muted);margin-bottom:32px}
+
+  .scale-header{display:grid;grid-template-columns:260px 1fr;gap:16px;margin-bottom:8px}
+  .scale-labels{display:flex;justify-content:space-between;padding:0 4px;font-size:11px;font-weight:600;color:var(--c-muted);letter-spacing:.5px;text-transform:uppercase}
+
+  .scorecard-section{background:var(--c-white);border:1px solid var(--c-border);border-radius:10px;overflow:hidden;margin-bottom:24px}
+  .scorecard-row{display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:center;padding:16px 20px;border-bottom:1px solid var(--c-border)}
+  .scorecard-row:last-child{border-bottom:none}
+  .scorecard-row.section-header{background:#fafafa;padding:20px 20px 16px}
+  .scorecard-label{font-size:14px;font-weight:600}
+  .scorecard-label.parent{font-size:16px}
+  .scorecard-sublabel{font-size:12px;color:var(--c-muted);margin-top:2px}
+  .scorecard-bar-wrap{position:relative}
+
+  .bar-track{position:relative;height:14px;background:#f0f0ee;border-radius:7px;overflow:visible}
+  .bar-fill{height:100%;border-radius:7px;transition:width .5s ease}
+  .bar-fill.poor{background:linear-gradient(90deg,#b91c1c,#dc2626)}
+  .bar-fill.mediocre{background:linear-gradient(90deg,#c2410c,#ea580c)}
+  .bar-fill.fair{background:linear-gradient(90deg,#d97706,#f59e0b)}
+  .bar-fill.decent{background:linear-gradient(90deg,#ca8a04,#eab308)}
+  .bar-fill.good{background:linear-gradient(90deg,#4d7c0f,#65a30d)}
+  .bar-marker{position:absolute;top:-4px;width:3px;height:22px;background:#1a1a1a;border-radius:2px;transform:translateX(-50%)}
+  .bar-score{position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;color:var(--c-muted);white-space:nowrap;padding-left:8px}
+
+  .dots-row{display:flex;align-items:center;height:16px;margin-top:6px}
+  .dot{width:5px;height:5px;border-radius:50%;background:#d1d5db;position:relative;flex-shrink:0}
+
+  /* Executive Summary */
+  .exec-summary{background:var(--c-white);border:1px solid var(--c-border);border-radius:10px;padding:28px;margin-bottom:24px}
+  .exec-summary h3{font-size:16px;font-weight:700;margin-bottom:12px}
+  .exec-summary p{font-size:14px;line-height:1.7;color:#374151;margin-bottom:12px}
+  .top-violations{margin-top:20px}
+  .top-violations h4{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--c-muted);margin-bottom:12px}
+  .violation-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-top:1px solid var(--c-border)}
+  .vi-rank{width:24px;height:24px;border-radius:50%;background:#fee2e2;color:var(--c-poor);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .vi-body{flex:1}
+  .vi-title{font-size:13px;font-weight:600;margin-bottom:2px}
+  .vi-meta{font-size:12px;color:var(--c-muted)}
+  .vi-score{font-size:13px;font-weight:700;color:var(--c-poor);white-space:nowrap;margin-left:auto;padding-left:12px}
+
+  /* ══════════════════════════════════════
+     SECTION PAGE (3-column)
+  ══════════════════════════════════════ */
+  .section-page{display:none;height:calc(100vh - 104px)}
+  .section-page.active{display:grid;grid-template-columns:var(--sidebar) 1fr}
+
+  /* Sidebar */
+  .sidebar{border-right:1px solid var(--c-border);overflow-y:auto;background:var(--c-white)}
+  .sidebar-header{padding:16px;border-bottom:1px solid var(--c-border)}
+  .sidebar-section-name{font-size:15px;font-weight:700}
+  .sidebar-count{font-size:12px;color:var(--c-muted);margin-top:2px}
+  .sidebar-group{padding:8px 0}
+  .sidebar-group-label{padding:8px 16px 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-muted);display:flex;align-items:center;justify-content:space-between}
+  .sidebar-group-label svg{opacity:.5}
+
+  .guideline-row{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-left:3px solid transparent;transition:background .1s}
+  .guideline-row:hover{background:#f9f9f7}
+  .guideline-row.active{background:#f4f3ff;border-left-color:var(--c-accent)}
+  .gr-icon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+  .gr-icon.violated-high{background:#fee2e2;color:var(--c-poor)}
+  .gr-icon.violated-low{background:#ffedd5;color:var(--c-mediocre)}
+  .gr-icon.neutral{background:#f3f4f6;color:var(--c-neutral)}
+  .gr-icon.adhered-low{background:#dcfce7;color:var(--c-adhered-low)}
+  .gr-icon.adhered-high{background:#dcfce7;color:var(--c-adhered-high)}
+  .gr-icon.na{background:#f3f4f6;color:#9ca3af}
+  .gr-title{font-size:12.5px;line-height:1.4;flex:1}
+  .gr-id{font-size:11px;color:var(--c-muted)}
+
+  /* Detail pane */
+  .detail-pane{overflow-y:auto;display:grid;grid-template-columns:1fr var(--detail);background:var(--c-bg)}
+  .detail-content{padding:28px;overflow-y:auto}
+  .detail-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-muted);font-size:14px;grid-column:1/-1}
+
+  .page-selector{display:flex;align-items:center;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+  .page-btn{padding:6px 14px;border-radius:99px;border:1px solid var(--c-border);background:var(--c-white);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+  .page-btn:hover{border-color:#aaa}
+  .page-btn.active{background:var(--c-text);color:#fff;border-color:var(--c-text)}
+
+  .detail-card{background:var(--c-white);border:1px solid var(--c-border);border-radius:10px;overflow:hidden}
+  .detail-card-head{padding:20px 24px;border-bottom:1px solid var(--c-border)}
+  .dc-meta{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .dc-id{font-size:12px;color:var(--c-muted)}
+  .dc-badge{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+  .dc-badge.violated-high{background:#fee2e2;color:var(--c-poor)}
+  .dc-badge.violated-low{background:#ffedd5;color:var(--c-mediocre)}
+  .dc-badge.neutral{background:#f3f4f6;color:var(--c-neutral)}
+  .dc-badge.adhered-low{background:#dcfce7;color:var(--c-adhered-low)}
+  .dc-badge.adhered-high{background:#dcfce7;color:var(--c-adhered-high)}
+  .dc-badge.na{background:#f3f4f6;color:#9ca3af}
+  .dc-impact{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;background:#f3f4f6;color:var(--c-muted)}
+  .dc-score{font-size:13px;font-weight:700}
+  .dc-score.negative{color:var(--c-poor)}
+  .dc-score.positive{color:var(--c-good)}
+  .dc-title{font-size:16px;font-weight:700;line-height:1.4}
+
+  .detail-card-body{padding:20px 24px}
+  .dc-section{margin-bottom:20px}
+  .dc-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-muted);margin-bottom:8px}
+  .dc-impl-item{display:flex;gap:8px;margin-bottom:6px;font-size:13px;line-height:1.5}
+  .dc-impl-item::before{content:'•';color:var(--c-muted);flex-shrink:0}
+  .dc-screenshot{width:100%;border-radius:8px;border:1px solid var(--c-border);cursor:pointer;transition:opacity .15s;max-height:220px;object-fit:cover;object-position:top}
+  .dc-screenshot:hover{opacity:.9}
+  .dc-no-screenshot{padding:24px;background:#f9f9f7;border-radius:8px;border:1px dashed var(--c-border);text-align:center;color:var(--c-muted);font-size:13px}
+  .dc-fix{font-size:13px;line-height:1.7;color:#374151;padding:14px;background:#f0fdf4;border-radius:8px;border-left:3px solid #16a34a}
+  .dc-fix-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#16a34a;margin-bottom:6px}
+
+  .detail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+  .tag{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#f3f4f6;color:var(--c-muted)}
+  .tag.yes{background:#dcfce7;color:#166534}
+
+  /* Preview pane */
+  .preview-pane{border-left:1px solid var(--c-border);background:var(--c-white);display:flex;flex-direction:column}
+  .preview-header{padding:12px 16px;border-bottom:1px solid var(--c-border);font-size:12px;font-weight:600;color:var(--c-muted)}
+  .preview-img{flex:1;overflow:hidden}
+  .preview-img img{width:100%;height:100%;object-fit:cover;object-position:top}
+  .preview-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--c-muted);font-size:13px}
+
+  /* ── MODAL ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:none;align-items:center;justify-content:center;padding:24px}
+  .modal-overlay.open{display:flex}
+  .modal-img{max-width:100%;max-height:90vh;border-radius:8px;box-shadow:0 24px 48px rgba(0,0,0,.4)}
+  .modal-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
+
+  /* ── RESPONSIVE adjustments ── */
+  @media(max-width:900px){
+    .section-page.active{grid-template-columns:var(--sidebar) 1fr}
+    .detail-pane{grid-template-columns:1fr}
+    .preview-pane{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo" id="topbar-sitename">Site</div>
+  <div class="topbar-site" id="topbar-url"></div>
+  <div class="topbar-date" id="topbar-date"></div>
+  <button class="btn-export" onclick="exportCSV()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export CSV
+  </button>
+</div>
+
+<!-- SECTION TABS -->
+<div class="tabs" id="main-tabs"></div>
+
+<!-- ══ OVERVIEW PAGE ══ -->
+<div class="page active" id="page-overview">
+  <div class="overview">
+    <div class="overview-title"><span id="ov-sitename"></span>'s UX Performance</div>
+    <div class="overview-meta" id="ov-meta"></div>
+
+    <!-- Executive Summary -->
+    <div class="exec-summary">
+      <h3>Executive Summary</h3>
+      <p id="ov-summary-text"></p>
+      <div class="top-violations">
+        <h4>Top Priority Fixes</h4>
+        <div id="ov-top-violations"></div>
+      </div>
+    </div>
+
+    <!-- Scorecard -->
+    <div class="scale-header">
+      <div></div>
+      <div>
+        <div class="scale-labels" id="scale-labels">
+          <span>POOR</span><span>MEDIOCRE</span><span>DECENT</span><span>GOOD</span><span>PERFECT</span>
+        </div>
+      </div>
+    </div>
+    <div class="scorecard-section" id="scorecard"></div>
+  </div>
+</div>
+
+<!-- Section pages injected by JS -->
+<div id="section-pages"></div>
+
+<!-- Screenshot modal -->
+<div class="modal-overlay" id="modal" onclick="closeModal()">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <img class="modal-img" id="modal-img" src="" alt="">
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  AUDIT DATA — Claude replaces this object with
+//  actual findings after completing the audit.
+// ═══════════════════════════════════════════════
+const AUDIT_DATA = {
+  site: "kookai.com.au",
+  url: "https://www.kookai.com.au",
+  date: "26 May 2026",
+  auditor: "Baymard AI Audit",
+  siteType: "Visually Driven",
+  scope: "Full Audit — All 8 Themes, Desktop + Mobile",
+  guidelineCount: 84,
+  executiveSummary: "Kookaï performs strongly on product presentation fundamentals — imagery quality, colour swatches, in-scale photography and variant switching are all excellent. The checkout experience is also a standout with express payment options, click-and-collect, and multiple delivery choices. However, the site has critical failures in three high-revenue areas: the product image gallery lacks thumbnails and any zoom capability, leaving shoppers unable to inspect garment detail; the filtering system has nine separate violations including no live filter updates, no filter pills after panel closes, AND logic on multi-select, and three missing filter types; and the 'Add to Bag' button silently selects AU 6 as a default size when no size is chosen. Together these issues will be driving meaningful abandonment across PLP and PDP pages. The absence of product reviews is a significant missed revenue opportunity — Baymard research shows reviews are the #1 trust signal for fashion purchases.",
+
+  themes: [
+    { id: "overview", name: "Overview" },
+    { id: "homepage", name: "Homepage & Navigation", guidelineCount: 14, performance: 12, violationCount: 5 },
+    { id: "search",   name: "On-Site Search",        guidelineCount: 12, performance: 7,  violationCount: 4 },
+    { id: "plp",      name: "Product Lists & Filtering", guidelineCount: 22, performance: -29, violationCount: 17 },
+    { id: "pdp",      name: "Product Page",           guidelineCount: 26, performance: -11, violationCount: 16 },
+    { id: "cart",     name: "Cart & Checkout",        guidelineCount: 16, performance: 15, violationCount: 3 },
+    { id: "accounts", name: "Customer Accounts",      guidelineCount: 6,  performance: -2,  violationCount: 1 },
+    { id: "sitewide", name: "Site-Wide & Accessibility", guidelineCount: 8, performance: 3, violationCount: 1 }
+  ],
+
+  assessments: [
+
+    // ═══════════════════════════════════════
+    // THEME: HOMEPAGE & NAVIGATION
+    // ═══════════════════════════════════════
+
+    {
+      code: "#2937D", title: "Use Both Icon and Text Label on the Account Menu Link",
+      theme: "homepage", topic: "Desktop Web > Site-Wide Elements > Header",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disturbing", impactScore: -2.38,
+      implementation: [
+        "Account link in sitewide header uses a person icon only, with no text label",
+        "Users unfamiliar with the icon may not recognise it as the account entry point",
+        "Boutique Locator link has both icon and text — account link lacks this treatment"
+      ],
+      fix: "Ensure the account menu link uses both a clear conventional icon and a text label (e.g. 'Account' or 'My Account'). Apply the same icon+text pattern used on the Boutique Locator link.",
+      screenshot: "screenshots/violation_2937D_use-both-icon-and-text-label-o.jpg",
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#885D", title: "Include a Link to Order Tracking in the Sitewide Header",
+      theme: "homepage", topic: "Desktop Web > Site-Wide Elements > Header",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "No order tracking link is present in the sitewide header or footer navigation",
+        "Tracking is only accessible by signing in to an account — guest orders have no tracking path",
+        "This creates friction for post-purchase users who return to check order status"
+      ],
+      fix: "Add a clearly labelled 'Track Order' link to the sitewide header. This must be accessible to both guest and signed-in users. Guest users should be able to track by entering order number + email.",
+      screenshot: "screenshots/violation_885D_include-a-link-to-order-tracki.jpg",
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#300D", title: "Highlight the Current Scope in the Main Navigation",
+      theme: "homepage", topic: "Desktop Web > Main Navigation",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Interruption", impactScore: -1.2,
+      implementation: [
+        "When browsing the Dresses category, no visual indicator highlights 'Dresses' in the main navigation",
+        "Users lose context of their current location within the site hierarchy",
+        "No underline, bold, or colour change applied to the active nav item"
+      ],
+      fix: "Visually highlight the active top-level navigation item when a user is browsing within that category — e.g. bold text, underline, or a distinct colour. This helps orient users within the site structure.",
+      screenshot: "screenshots/violation_300D_highlight-the-current-scope-in.jpg",
+      pageContexts: ["Product Listing Page", "Product Page"]
+    },
+    {
+      code: "#266D", title: "Make Column Headers in Dropdown Menus Clickable Category Links",
+      theme: "homepage", topic: "Desktop Web > Main Navigation",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disruptive", impactScore: -1.7,
+      implementation: [
+        "The SHOP dropdown contains column headers such as 'New Arrivals' and 'Collections'",
+        "These headers appear as static text and are not clickable links to the category pages",
+        "Users who click column headers expecting navigation are left stranded"
+      ],
+      fix: "Ensure all column headers within the SHOP dropdown navigation are clickable links that navigate to the corresponding category page. Visual styling (underline on hover) should reinforce that they are interactive.",
+      screenshot: "screenshots/violation_266D_make-column-headers-in-dropdow.jpg",
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#1666D", title: "Include a 'Best Sellers' Category in the Main Navigation",
+      theme: "homepage", topic: "Desktop Web > Category Taxonomy",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: true, isSuggestion: true,
+      judgement: "Violated Low", impact: "Interruption", impactScore: -1.0,
+      implementation: [
+        "No 'Best Sellers' or 'Most Popular' category exists in the main navigation",
+        "The Collections link points to /collections/best-sellers but is not labelled as such",
+        "Many shoppers default to browsing best sellers as a starting point — this entry point is hidden"
+      ],
+      fix: "Add a clearly labelled 'Best Sellers' link to the main navigation. This is a high-converting entry point for new visitors and users who are browsing without a specific item in mind.",
+      screenshot: "screenshots/violation_1666D_include-a-best-sellers-categ.jpg",
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#607D", title: "Visually Emphasise the Cart Link in the Sitewide Header",
+      theme: "homepage", topic: "Desktop Web > Site-Wide Elements > Header",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Cart icon is clearly visible in the top-right corner of the sitewide header",
+        "Cart shows an item count badge when items are added",
+        "Icon is consistent across all page types"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#238D", title: "Use High-Quality Bespoke Hero Imagery on the Homepage",
+      theme: "homepage", topic: "Desktop Web > Homepage",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Harmful", impactScore: 3.8,
+      implementation: [
+        "Homepage hero features bespoke campaign photography with models wearing current season product",
+        "Full-width imagery is high resolution and brand-consistent",
+        "Multiple hero images with seasonal campaign visuals"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Homepage"]
+    },
+    {
+      code: "#252D", title: "Feature Delivery and Returns Information in the Footer",
+      theme: "homepage", topic: "Desktop Web > Site-Wide Elements > Footer",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Footer includes links to Delivery and Returns FAQ pages under Customer Care",
+        "Delivery link and Returns FAQ are clearly labelled and accessible from all pages"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#287D", title: "Make Product Categories the First Level of Main Navigation",
+      theme: "homepage", topic: "Desktop Web > Main Navigation",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Top-level navigation is organised by product category: Dresses, Tops, Bottoms, Jackets",
+        "Categories are clearly labelled and consistently accessible from all pages"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#257D", title: "Ensure the Site Logo Always Links to the Homepage",
+      theme: "homepage", topic: "Desktop Web > Site-Wide Elements > Header",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Interruption", impactScore: 1.2,
+      implementation: ["KOOKAÏ logo links to the homepage from all page types"],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#1008D", title: "Include a Sale / Promotional Category in the Main Navigation",
+      theme: "homepage", topic: "Desktop Web > Main Navigation",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: ["Sale is prominently listed in the main navigation and highlighted in the announcement bar"],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#251D", title: "Feature New Arrivals Prominently in the Navigation",
+      theme: "homepage", topic: "Desktop Web > Main Navigation",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: ["New Arrivals is the first item in the main navigation dropdown"],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#237D", title: "Feature a Broad Range of Product Types on the Homepage",
+      theme: "homepage", topic: "Desktop Web > Homepage",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered Low", impact: "Disruptive", impactScore: 1.7,
+      implementation: [
+        "Homepage features Dresses, Tops and selected Collections but not the full category breadth",
+        "Bottoms and Jackets are not directly represented as category tiles on the homepage"
+      ],
+      fix: "Feature a broader range of product categories directly on the homepage through visual category tiles or shoppable content. Include Bottoms and Jackets alongside Dresses and Tops.",
+      screenshot: null,
+      pageContexts: ["Homepage"]
+    },
+    {
+      code: "#303D", title: "Include Thematic and Campaign Resources in the Navigation",
+      theme: "homepage", topic: "Desktop Web > Main Navigation",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: ["Campaigns, Shop Insta, and seasonal content are accessible from the navigation"],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+
+    // ═══════════════════════════════════════
+    // THEME: ON-SITE SEARCH
+    // ═══════════════════════════════════════
+
+    {
+      code: "#2729D", title: "Provide Predictive Text Autocomplete Suggestions in the Search Field",
+      theme: "search", topic: "Desktop Web > On-Site Search > Search Autocomplete",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: true, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disturbing", impactScore: -2.38,
+      implementation: [
+        "Autocomplete dropdown shows product image tiles with name and price",
+        "No text-based query suggestions are shown (e.g. 'mini dress', 'black dresses', 'floral')",
+        "Only product-level autocomplete is provided — category/keyword suggestions are absent"
+      ],
+      fix: "Add predictive text query suggestions above or alongside product results in the autocomplete dropdown. These help users refine imprecise searches and discover category-level navigation paths (e.g. 'dresses → mini dresses').",
+      screenshot: "screenshots/violation_2729D_provide-predictive-text-autoco.jpg",
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#2730D", title: "Show the Correct Colour Variant in Search Results Thumbnails",
+      theme: "search", topic: "Desktop Web > On-Site Search > Search Results",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disruptive", impactScore: -1.7,
+      implementation: [
+        "When searching 'white dress', black-coloured product images are shown for products that exist in white",
+        "The search results show the default colour variant rather than the colour matching the search query",
+        "This creates a disconnect between the search intent and the visual results"
+      ],
+      fix: "When a colour-related search query is entered (e.g. 'white dress'), display the product thumbnail for the matching colour variant rather than the default variant image. This aligns visual results with search intent.",
+      screenshot: "screenshots/violation_2730D_show-the-correct-colour-varian.jpg",
+      pageContexts: ["Search Results Page"]
+    },
+    {
+      code: "#2714D", title: "Display Total Result Count on the Search Results Page",
+      theme: "search", topic: "Desktop Web > On-Site Search > Search Results",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "Search results page shows the query ('Results for mini dress') but no total result count",
+        "Users cannot gauge the breadth of results or understand whether they need to refine the query",
+        "Product listing pages also lack a total count — this is a consistent gap"
+      ],
+      fix: "Display the total number of results prominently on the search results page (e.g. '47 results for mini dress'). This helps users calibrate search scope and decide whether to refine or browse results.",
+      screenshot: "screenshots/violation_2714D_display-total-result-count-on.jpg",
+      pageContexts: ["Search Results Page"]
+    },
+    {
+      code: "#2716D", title: "Suggest Alternative Queries or Correct Spelling on Zero-Result Pages",
+      theme: "search", topic: "Desktop Web > On-Site Search > Search Results",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Interruption", impactScore: -1.0,
+      implementation: [
+        "Zero-results page provides a text input to retry the search and category escape links",
+        "No 'Did you mean?' spell correction or alternative query suggestions are shown",
+        "Users who arrive with a misspelled or slightly off-target query receive no guidance"
+      ],
+      fix: "Add 'Did you mean [alternative]?' suggestions on zero-results pages where the query is close to known product names or categories. Pair with the existing retry input and escape links.",
+      screenshot: "screenshots/violation_2716D_suggest-alternative-queries-or.jpg",
+      pageContexts: ["Search Results Page"]
+    },
+    {
+      code: "#2709D", title: "Show Products with Images and Prices in the Search Autocomplete",
+      theme: "search", topic: "Desktop Web > On-Site Search > Search Autocomplete",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disturbing", impactScore: 2.8,
+      implementation: [
+        "Search autocomplete dropdown shows product tiles with product image, name, and price",
+        "A 'SEE ALL RESULTS' link is prominently displayed at the bottom of the autocomplete panel"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#2711D", title: "Handle Misspellings and Typos Gracefully in Search",
+      theme: "search", topic: "Desktop Web > On-Site Search > Search Form and Logic",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Harmful", impactScore: 3.8,
+      implementation: [
+        "Search handles common typos well — 'mini dres' and 'kokaï' return relevant results",
+        "Fuzzy matching is active and returns meaningful product results for minor misspellings"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Search Results Page"]
+    },
+    {
+      code: "#2718D", title: "Provide Filter and Sort Options on Search Results Pages",
+      theme: "search", topic: "Desktop Web > On-Site Search > Search Results",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Search results page includes the same 'FILTER & SORT' panel as category listing pages",
+        "Colour, Style, Size, and Price filters are all available on search results"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Search Results Page"]
+    },
+    {
+      code: "#2720D", title: "Provide Helpful Escape Routes on Zero-Results Pages",
+      theme: "search", topic: "Desktop Web > On-Site Search > Search Results",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Zero-results page includes a search retry input field and links to browse major categories",
+        "Page headline clearly communicates that no results were found"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Search Results Page"]
+    },
+
+    // ═══════════════════════════════════════
+    // THEME: PRODUCT LISTS & FILTERING
+    // ═══════════════════════════════════════
+
+    {
+      code: "#470D", title: "Truncate Long Filter Option Lists to Prevent Overwhelming Users",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Interface & Layout",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Harmful", impactScore: -3.8,
+      implementation: [
+        "The COLOUR filter lists all 13 colour options simultaneously without truncation",
+        "Users must scroll a long list before applying a filter — no 'Show more' truncation exists",
+        "This creates visual clutter and makes the filter panel harder to scan quickly"
+      ],
+      fix: "Truncate long filter option lists to 5–8 visible items with a 'Show more' link to expand. This keeps the filter panel scannable and reduces cognitive load, especially for the COLOUR filter which has 13+ options.",
+      screenshot: "screenshots/violation_470D_truncate-long-filter-option-li.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#486D", title: "Apply Filters Immediately Without Requiring an 'Apply' Button",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Interface & Layout",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Harmful", impactScore: -3.8,
+      implementation: [
+        "The filter panel requires users to click an 'APPLY' button to trigger filter results",
+        "No live update occurs when a filter is selected — the product grid only refreshes after APPLY",
+        "This two-step process adds friction and obscures the connection between filter selection and results"
+      ],
+      fix: "Apply filters live as users select options — update the product grid in real time without requiring a separate 'Apply' button. If a side panel is used, auto-close it after selection and show results immediately.",
+      screenshot: "screenshots/violation_486D_apply-filters-immediately-with.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#1167D", title: "Include a User Ratings Filter on Listing Pages",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Available Filters",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: true, isSuggestion: false,
+      judgement: "Violated High", impact: "Harmful", impactScore: -3.8,
+      implementation: [
+        "No user ratings filter exists because the site has no product review system",
+        "This is a downstream consequence of the missing review system (#739D)",
+        "Users cannot filter by product rating — a top usage pattern in fashion e-commerce"
+      ],
+      fix: "Implement product reviews (see #739D). Once reviews exist, add a 'Rating' filter allowing users to show only 4-star or 5-star products. This is a high-usage filter type in fashion and significantly improves conversion for confident buyers.",
+      screenshot: "screenshots/violation_1167D_include-a-user-ratings-filter.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#511D", title: "Include a 'User Rating' Sort Option on Listing Pages",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Sorting",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: true, isSuggestion: false,
+      judgement: "Violated Low", impact: "Harmful", impactScore: -3.23,
+      implementation: [
+        "Sort options include: Featured, Newest, Price Low-High, Price High-Low, Best Sellers, Alphabetical",
+        "No 'Best Rated' or 'Most Reviewed' sort option exists",
+        "Absence of reviews drives this — but the sort option should be added when reviews are implemented"
+      ],
+      fix: "Add a 'Best Rated' sort option to the listing page sort dropdown. This allows users to surface the highest-quality products first, which is especially valuable in fashion where fit and quality vary.",
+      screenshot: "screenshots/violation_511D_include-a-user-rating-sort-o.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#488D", title: "Show Active Filter Selections When the Filter Panel is Closed",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Interface & Layout",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disturbing", impactScore: -2.8,
+      implementation: [
+        "After clicking APPLY and closing the filter panel, no filter pills or badges appear on the page",
+        "The FILTER & SORT button shows no indicator of active filters",
+        "Users have no way to see what filters are active without reopening the filter panel"
+      ],
+      fix: "Display active filter selections as removable pill chips below the page header when the filter panel is closed. Each chip should show the filter value and a close (×) button to remove that filter without reopening the panel.",
+      screenshot: "screenshots/violation_488D_show-active-filter-selections.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#489D", title: "Allow Users to Remove Individual Applied Filters Without Reopening the Filter Panel",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Interface & Layout",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disturbing", impactScore: -2.8,
+      implementation: [
+        "Once filters are applied and the panel is closed, there is no way to remove individual filters",
+        "Users must reopen the filter panel, uncheck each filter, and click APPLY again",
+        "No 'Clear filters' or individual filter removal is available outside the panel"
+      ],
+      fix: "Show applied filters as removable chips below the listing header (see #488D). Each chip must have an individual × button to remove that specific filter. Add a 'Clear all' option when multiple filters are active.",
+      screenshot: "screenshots/violation_489D_allow-users-to-remove-individu.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#427D", title: "Use OR Logic When Multiple Options of the Same Filter Type are Selected",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Scope & Logic",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "Selecting both 'Midi' and 'Mini' under the STYLE filter returns 0 results",
+        "URL confirms AND logic: ?filter.ss_collection_filter=Dresses>Midi&filter.ss_collection_filter=Dresses>Mini",
+        "A product cannot simultaneously be both Midi and Mini — AND logic makes multi-select useless"
+      ],
+      fix: "Apply OR logic when multiple options within the same filter type are selected (e.g. Midi OR Mini). AND logic should only be used across different filter types (e.g. Black AND Midi). This is the universal expected behaviour in product filtering.",
+      screenshot: "screenshots/violation_427D_use-or-logic-when-multiple-opt.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#537D", title: "Include Breadcrumb Navigation on All Category and Listing Pages",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > List Layout",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "Category listing pages (e.g. /collections/dresses) show only the category title 'Dresses'",
+        "No breadcrumb trail is present (e.g. Home > Dresses)",
+        "PDP pages have a breadcrumb but it does not include the category level — only the product name"
+      ],
+      fix: "Add breadcrumb navigation to all listing and product pages. The breadcrumb should show the full path from Home to the current page (e.g. Home > Dresses > Nova Mini Dress) and each level should be a clickable link.",
+      screenshot: "screenshots/violation_537D_include-breadcrumb-navigation.jpg",
+      pageContexts: ["Product Listing Page", "Product Page"]
+    },
+    {
+      code: "#417D", title: "Include a Product Status Filter (In Stock / Pre-Order / Sold Out)",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Available Filters",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "No availability/stock status filter is present in the filter panel",
+        "Some products are marked 'In Store Only — Click & Collect' but users cannot filter to online-only",
+        "Users shopping for immediate online delivery cannot filter out in-store-only items"
+      ],
+      fix: "Add an 'Availability' filter with options for 'Online', 'In-Store', and 'Click & Collect' to allow users to filter products by fulfilment method. At minimum, allow filtering to show only items available for online shipping.",
+      screenshot: "screenshots/violation_417D_include-a-product-status-filte.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#1191D", title: "Include a Sale / Discounted Items Filter on Listing Pages",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Available Filters",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: true, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "No 'Sale' or 'On Sale' filter option is present in the filter panel on listing pages",
+        "Sale items are visible throughout the listing (e.g. $70 Kosa Mini Dress), but cannot be filtered to",
+        "Users who want to shop sale-only items must scroll the entire listing"
+      ],
+      fix: "Add a 'Sale' or 'Discounted' filter option to the filter panel. This is a high-usage filter type on fashion sites and allows price-conscious shoppers to efficiently browse only discounted items.",
+      screenshot: "screenshots/violation_1191D_include-a-sale-discounted-it.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#415D", title: "Include a New Arrivals Filter on Listing Pages",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Available Filters",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "No 'New' or 'New Arrivals' filter option exists within listing page filter panels",
+        "Users who are browsing an all-dresses listing cannot filter to see only new arrivals",
+        "New Arrivals exists as a nav link but not as a filter within broader category listings"
+      ],
+      fix: "Add a 'New Arrivals' filter option within listing page filter panels. Tag newly added products with a date-based flag and allow users to filter to items added within the last 30/60/90 days.",
+      screenshot: "screenshots/violation_415D_include-a-new-arrivals-filter.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#467D", title: "Show Product Count for Each Filter Option",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Interface & Layout",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "Filter options (colours, styles, sizes) show no product counts",
+        "Users cannot see how many products match a given filter option before selecting it",
+        "This makes it difficult to gauge whether a filter will yield meaningful results"
+      ],
+      fix: "Display a product count next to each filter option (e.g. 'Black (23)'). Grey out or hide options with zero matching products. This gives users confidence before they commit to a filter selection.",
+      screenshot: "screenshots/violation_467D_show-product-count-for-each-fi.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#531D", title: "Display the Total Number of Products on Listing Pages",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > List Layout",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disruptive", impactScore: -1.7,
+      implementation: [
+        "Category listing pages (e.g. Dresses) display the category name but no total product count",
+        "Users cannot see how many products are in the category they are browsing",
+        "After applying filters, there is also no updated count showing how many products match"
+      ],
+      fix: "Display a total product count prominently on listing pages (e.g. '47 Dresses'). When filters are active, update the count dynamically to show matching products (e.g. '12 of 47 Dresses').",
+      screenshot: "screenshots/violation_531D_display-the-total-number-of-pr.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#416D", title: "Allow Users to Set a Custom Price Range, Not Just Pre-defined Ranges",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Available Filters",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disruptive", impactScore: -1.7,
+      implementation: [
+        "Price filter presents predefined range buckets rather than a custom min/max slider or text inputs",
+        "Users with a specific budget (e.g. $100–$160) cannot enter exact values",
+        "Predefined ranges may not align with user budgets, forcing sub-optimal filter choices"
+      ],
+      fix: "Replace predefined price range buckets with a dual-handle slider and/or editable min/max input fields. This gives users precise control over their budget filter and removes the mismatch between predefined buckets and actual price preferences.",
+      screenshot: "screenshots/violation_416D_allow-users-to-set-a-custom-pr.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#479D", title: "Use Checkboxes (or Equivalent) for Multi-Select Filter Options",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Interface & Layout",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Interruption", impactScore: -1.0,
+      implementation: [
+        "Filter options in the Style and Size filters use plain text links without checkbox indicators",
+        "Selected filters have a subtle styling change but no conventional checkbox or checkmark is shown",
+        "Users may not recognise that multiple selections are possible"
+      ],
+      fix: "Use checkboxes or clearly styled toggle buttons for filter options to signal that multiple selections are possible. The selected state must be visually distinct (e.g. filled checkbox, bold text with check icon).",
+      screenshot: "screenshots/violation_479D_use-checkboxes-or-equivalent.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#2584D", title: "Position Filters in a Sidebar or Drawer, Not a Horizontal Toolbar",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Interface & Layout",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: true,
+      judgement: "Violated High", impact: "Interruption", impactScore: -1.2,
+      implementation: [
+        "Filters are accessed via a 'FILTER & SORT' button that opens a horizontal panel over the products",
+        "The filter panel temporarily covers the product grid and must be closed to see results",
+        "On desktop, a left-sidebar filter layout allows simultaneous filter selection and product viewing"
+      ],
+      fix: "On desktop (>900px), consider a persistent left-sidebar filter layout so users can see filter options and product results simultaneously. This is the Baymard-recommended pattern for desktop filter interaction.",
+      screenshot: "screenshots/violation_2584D_position-filters-in-a-sidebar.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#850D", title: "Display Size Options as Visual Buttons or Pills on Listing Pages",
+      theme: "plp", topic: "Desktop Web > Product Lists & Filtering > Filtering: Interface & Layout",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Interruption", impactScore: -1.0,
+      implementation: [
+        "Size options in the filter panel are displayed as plain text links (AU 6, AU 8, etc.)",
+        "No pill-shaped buttons or visual toggle treatment for size options",
+        "Text-only presentation reduces scannability and makes multi-select ambiguity worse"
+      ],
+      fix: "Display size filter options as visual pill buttons with clear selected/unselected states. Pill buttons are easier to tap on mobile and scan on desktop, and communicate multi-select availability more clearly.",
+      screenshot: "screenshots/violation_850D_display-size-options-as-visual.jpg",
+      pageContexts: ["Product Listing Page"]
+    },
+
+    // ═══════════════════════════════════════
+    // THEME: PRODUCT PAGE
+    // ═══════════════════════════════════════
+
+    {
+      code: "#774D", title: "Provide Image Thumbnails in the Product Gallery",
+      theme: "pdp", topic: "Desktop Web > Product Page > Image Gallery UI",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Harmful", impactScore: -3.8,
+      implementation: [
+        "Product gallery displays a single main image with no thumbnail strip below or to the side",
+        "Users must click left/right arrows to navigate images — there is no way to see all available images at a glance",
+        "Users cannot preview which images exist or jump to a specific image type (e.g. back view)"
+      ],
+      fix: "Add a thumbnail strip (vertical on left sidebar, or horizontal below main image) showing all available product images. Thumbnails allow users to see the full image set at a glance and jump directly to any view. For visually driven fashion products this is critical for purchase decisions.",
+      screenshot: "screenshots/violation_774D_provide-image-thumbnails-in-th.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#2997D", title: "Allow Users to Zoom Into Product Images",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Images",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Harmful", impactScore: -3.8,
+      implementation: [
+        "No zoom functionality exists on any product image — neither hover zoom, click-to-zoom, nor pinch-to-zoom on mobile",
+        "Users cannot inspect fabric texture, pattern detail, or garment construction",
+        "For fashion apparel this is a critical purchase-decision aid that is entirely absent"
+      ],
+      fix: "Implement zoom on all product images. Recommended: hover-activated zoom on desktop (inline lens or window zoom), and pinch-to-zoom or double-tap zoom on mobile. The zoom should reveal sufficient detail to assess fabric quality and construction.",
+      screenshot: "screenshots/violation_2997D_allow-users-to-zoom-into-produ.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#843D", title: "Use Bullet Points or Structured Lists for Product Feature Information",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Descriptions",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Harmful", impactScore: -3.8,
+      implementation: [
+        "Product descriptions are presented as single prose paragraphs",
+        "Key product features (neckline, sleeve length, length, fabric) are buried in running text",
+        "Users scanning for specific attributes must read the full paragraph — key specs are not visually surfaced"
+      ],
+      fix: "Break product descriptions into structured sections: a short prose overview followed by bullet-pointed key features (neckline, sleeve, length, fit, fabric). Use the Details accordion to house this structured content. Bullets dramatically improve scannability for fashion shoppers comparing multiple products.",
+      screenshot: "screenshots/violation_843D_use-bullet-points-or-structure.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#739D", title: "Enable User Product Reviews on Product Pages",
+      theme: "pdp", topic: "Desktop Web > Product Page > User Reviews",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: true, isSuggestion: false,
+      judgement: "Violated High", impact: "Harmful", impactScore: -3.8,
+      implementation: [
+        "Product pages have no reviews section — no star rating, no review count, no individual reviews",
+        "Users have no social proof to inform purchase decisions",
+        "Baymard research identifies reviews as the #1 trust signal for apparel purchases — their absence significantly impacts conversion"
+      ],
+      fix: "Implement a product review system. Display average star rating and review count prominently in the buy box (near the product title). Allow both logged-in and guest submissions. Display individual reviews with verified purchase badges, fit/sizing feedback, and photo uploads.",
+      screenshot: "screenshots/violation_739D_enable-user-product-reviews-on.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#795D", title: "Require Users to Explicitly Select a Size Before Adding to Bag",
+      theme: "pdp", topic: "Desktop Web > Product Page > The 'Buy' Section",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Harmful", impactScore: -3.8,
+      implementation: [
+        "Clicking 'ADD TO BAG' without selecting a size silently adds the product in AU 6 (the first size)",
+        "No error message, prompt, or size confirmation is shown",
+        "The cart shows the default size was added — users who don't notice will order the wrong size",
+        "This can result in incorrect orders, returns, and loss of customer trust"
+      ],
+      fix: "Prevent 'Add to Bag' from triggering until a size is explicitly selected. If Add to Bag is tapped without a size, show an inline prompt: 'Please select a size.' Highlight the size selector with a red border or shake animation. Never silently default to any size.",
+      screenshot: "screenshots/violation_795D_require-users-to-explicitly-se.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#807D", title: "Include Supplementary Brand Story, Sustainability or Material Information",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Descriptions",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: true, isSuggestion: false,
+      judgement: "Violated Low", impact: "Harmful", impactScore: -3.23,
+      implementation: [
+        "Product pages include fabric composition and care instructions but no broader material sourcing context",
+        "No information about sustainable materials, ethical manufacturing, or origin",
+        "Kookaï has a Mindful Manufacturing and Katalyst Foundation page but these are not linked from PDPs"
+      ],
+      fix: "Add a brief sustainability/brand story section to product pages. Link to the Mindful Manufacturing page from individual PDPs. Highlight certifications, material sourcing, or production practices where applicable. This is increasingly important for fashion shoppers.",
+      screenshot: "screenshots/violation_807D_include-supplementary-brand-st.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#1501D", title: "Present the Returns Policy in a Clear, Easy-to-Scan Format on the Product Page",
+      theme: "pdp", topic: "Desktop Web > Product Page > Shipping, Returns & Gifting",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Harmful", impactScore: -3.23,
+      implementation: [
+        "Returns information on the PDP accordion provides only a link to initiate returns via email/phone",
+        "Key return conditions (free returns? timeframe? in-store vs post?) are not stated on the product page",
+        "Users must navigate away to the Returns FAQ page to get basic policy information",
+        "21-day return window is only shown as a trust badge, not explained inline"
+      ],
+      fix: "Add a brief, scannable returns summary directly in the Shipping & Returns accordion: return window (21 days), method (by post, in-store), cost (free or paid), and conditions (unworn, tags on). This reduces pre-purchase uncertainty without requiring navigation away.",
+      screenshot: "screenshots/violation_1501D_present-the-returns-policy-in.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#781D", title: "Provide Hover-Activated Zoom on Desktop Product Images",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Images",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "Hovering over product images produces no zoom effect",
+        "No cursor change (e.g. magnifier icon) indicates that zoom is possible",
+        "Hover zoom is the standard desktop interaction pattern for product image inspection"
+      ],
+      fix: "Implement hover-activated zoom on desktop product images. Options include: (1) inline lens zoom that shows a zoomed view within the image, or (2) a separate zoom window that appears beside the main image on hover. The zoom should reveal 2–3× the detail visible in the base image.",
+      screenshot: "screenshots/violation_781D_provide-hover-activated-zoom-o.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#2994D", title: "Enable Zoom in the Lightbox / Full-Screen Image View",
+      theme: "pdp", topic: "Desktop Web > Product Page > Image Gallery UI",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "The image gallery opens in a lightbox/fullscreen overlay when clicked",
+        "The lightbox displays the image at viewport size but provides no further zoom capability",
+        "Users who want to inspect garment detail are unable to do so even in the fullscreen view"
+      ],
+      fix: "Enable zoom within the lightbox/fullscreen image view. Users should be able to click or scroll to zoom into the image to inspect fabric and detail. Include a zoom level indicator and allow panning within the zoomed view.",
+      screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#2991D", title: "Consider an External Zoom Window for Desktop Product Images",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Images",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: true,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "No external zoom window appears when hovering over product images",
+        "External zoom (a separate pane showing a magnified view) is a common desktop pattern for fashion",
+        "Combined with the absence of hover zoom this represents a complete absence of zoom capability"
+      ],
+      fix: "Consider an external zoom window that appears alongside the main product image on hover — showing a magnified view at 3–4× zoom in a panel to the right of the image. This is particularly effective for fabric-forward fashion items where texture is a key purchase driver.",
+      screenshot: "screenshots/violation_2991D_consider-an-external-zoom-wind.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#759D", title: "Include Product Videos or 360-Degree Views for Key Products",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Videos & 360-Views",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: true, isSuggestion: true,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "No video content is present on any product page",
+        "No 360-degree view option is available",
+        "For fashion garments, video demonstrating movement and drape is a high-value conversion driver"
+      ],
+      fix: "Add short product videos (5–15 seconds) to hero/key product pages showing the garment in motion. This is particularly effective for dresses where drape, movement, and fit can only be fully communicated through video. Embed from existing campaign content where available.",
+      screenshot: "screenshots/violation_759D_include-product-videos-or-360.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#860D", title: "Highlight Key Product Features in the Product Page Headline Area",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Descriptions",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "The product headline shows only the product name (e.g. 'Nova Mini Dress') and price",
+        "No key features (e.g. 'Stretch Cotton · Mini Length · Ruched Waist') appear near the title",
+        "Shoppers must open the Details accordion to find product-specific feature information"
+      ],
+      fix: "Add a short feature line (2–4 attributes) directly below the product name and above the price. This should surface the 2–3 most distinctive attributes of the product (e.g. 'Stretch cotton · Ruched waist · AU 6–12') so users can assess fit without opening accordions.",
+      screenshot: "screenshots/violation_860D_highlight-key-product-features.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#787D", title: "Include a Q&A Section on the Product Page",
+      theme: "pdp", topic: "Desktop Web > Product Page > Auxiliary Content",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: true, isSuggestion: true,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "No Q&A section exists on product pages",
+        "Users with pre-purchase questions (e.g. sizing, fabric, care) have no product-level resource",
+        "Questions must be directed to customer service via email/phone, increasing friction"
+      ],
+      fix: "Add a Q&A section to product pages. Allow logged-in users to submit questions and display brand answers publicly. This reduces pre-purchase friction, deflects customer service contacts, and provides SEO-useful content.",
+      screenshot: "screenshots/violation_787D_include-a-q-a-section-on-the-p.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#812D", title: "Include a Link to the Parent Category in Cross-Sell Sections",
+      theme: "pdp", topic: "Desktop Web > Product Page > Cross-Sells & Cross-Navigation",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "'You May Also Like' section shows related products but has no 'View all Dresses' link",
+        "Users who want to explore more of the same category must navigate back via the main nav",
+        "The cross-sell section is a natural conversion point to drive deeper browsing"
+      ],
+      fix: "Add a 'View all [Category]' link below or beside the 'You May Also Like' section. This gives users a clear path to browse the parent category without requiring navigation through the main menu.",
+      screenshot: "screenshots/violation_812D_include-a-link-to-the-parent-c.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#828D", title: "Include the Product Category in the Breadcrumb Trail",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Page Layout",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "PDP breadcrumb shows only the product name (e.g. 'Nova Mini Dress') as the current page",
+        "No parent category level is included (e.g. 'Home > Dresses > Nova Mini Dress')",
+        "Users who want to return to the Dresses category must use the main nav rather than the breadcrumb"
+      ],
+      fix: "Include the category in the breadcrumb trail on PDPs: Home > [Category] > [Product Name]. Each breadcrumb level should be a clickable link. This enables efficient back-navigation from PDP to PLP.",
+      screenshot: "screenshots/violation_828D_include-the-product-category-i.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#2712D", title: "Preserve the Selected Size When Switching Between Colour Variants",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Variations",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "When switching from one colour variant to another via swatch links, the size selection resets",
+        "Each colour variant is a separate Shopify product URL — navigating to it loses the previously chosen size",
+        "Users must re-select their size after every colour switch, adding repetitive friction"
+      ],
+      fix: "Preserve the user's size selection across colour variant switches. Use URL parameters or localStorage to carry the selected size when navigating between variant URLs. This is a known Shopify implementation pattern achievable via theme JavaScript.",
+      screenshot: "screenshots/violation_2712D_preserve-the-selected-size-whe.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#779D", title: "Ensure Product Images are High-Quality and Show the Product Clearly",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Images",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Harmful", impactScore: 3.8,
+      implementation: [
+        "All product images are high-resolution, well-lit, and cleanly composed",
+        "Products are photographed on models against clean neutral backgrounds",
+        "Image dimensions are large enough for useful viewing even without zoom"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#740D", title: "Include Multiple Product Images Showing Different Angles",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Images",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Harmful", impactScore: 3.8,
+      implementation: [
+        "Products have 3–6 images showing front, back, 3/4 views, and detail shots",
+        "Lifestyle and contextual photography is included for most products",
+        "The Nova Mini Dress shows 5 images covering multiple styling perspectives"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#741D", title: "Include At Least One In-Scale, On-Model Image for Every Product",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Images",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Harmful", impactScore: 3.8,
+      implementation: [
+        "All products are photographed on models at full-length with height information stated",
+        "Model height (178cm) and size worn (AU 6) is stated in the product description",
+        "In-scale imagery allows users to gauge proportions and fit on the body"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#849D", title: "Show Colour Swatches on the Product Page",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Variations",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Harmful", impactScore: 3.8,
+      implementation: [
+        "Colour swatches are displayed as coloured circles on the PDP with the current colour name labelled",
+        "All available colours are shown and clicking a swatch navigates to the correct variant URL",
+        "Swatches update the main product image to show the selected colour"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#853D", title: "Update Product Images When a Colour Swatch is Selected",
+      theme: "pdp", topic: "Desktop Web > Product Page > Product Variations",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Harmful", impactScore: 3.8,
+      implementation: [
+        "Selecting a colour swatch navigates to the correct variant URL with that colour's images",
+        "The entire image gallery updates to show the selected colour's photography",
+        "This is implemented via Shopify's per-variant product pages"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#803D", title: "Include Return and Refund Policy Information on the Product Page",
+      theme: "pdp", topic: "Desktop Web > Product Page > Shipping, Returns & Gifting",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Harmful", impactScore: 3.8,
+      implementation: [
+        "A 'Shipping & Returns' accordion is present on every PDP",
+        "Shipping rates (standard, express) are detailed with free threshold information",
+        "Returns link and contact details are provided within the accordion"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#791D", title: "Make the Add-to-Cart Button the Most Prominent Interactive Element on the Page",
+      theme: "pdp", topic: "Desktop Web > Product Page > The 'Buy' Section",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "'ADD TO BAG' is a full-width black button — the most prominent element in the buy section",
+        "Button is consistently positioned directly below the size selector",
+        "Strong visual contrast against the white background"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#792D", title: "Display the Product Price Prominently Near the Add-to-Cart Button",
+      theme: "pdp", topic: "Desktop Web > Product Page > The 'Buy' Section",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Product price is displayed prominently below the product title, directly above the size selector",
+        "Sale prices show the original price struck through next to the sale price",
+        "Currency is clearly indicated (AUD)"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#798D", title: "Allow Guest Users to Save Products to a Wishlist",
+      theme: "pdp", topic: "Desktop Web > Product Page > The 'Buy' Section",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Wishlist heart icon is visible on product listing thumbnails and on the PDP buy section",
+        "Wishlisting is available without requiring account sign-in",
+        "Wishlist is accessible from the header navigation"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Page", "Product Listing Page"]
+    },
+    {
+      code: "#738D", title: "Include a Cross-Sells / 'You May Also Like' Section",
+      theme: "pdp", topic: "Desktop Web > Product Page > Cross-Sells & Cross-Navigation",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Harmful", impactScore: 3.8,
+      implementation: [
+        "'You May Also Like' section shows 6–8 product recommendations with images, names, colours and prices",
+        "'Styled With' accessory cross-sell is also present with add-to-bag capability",
+        "Cross-sells are present on all tested PDPs"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+
+    // ═══════════════════════════════════════
+    // THEME: CART & CHECKOUT
+    // ═══════════════════════════════════════
+
+    {
+      code: "#376D", title: "Include a Promo Code / Discount Code Field in the Shopping Cart",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > Shopping Cart",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disruptive", impactScore: -1.7,
+      implementation: [
+        "No discount/promo code entry field exists in the shopping cart",
+        "Discount code entry is available only inside the Shopify checkout (after clicking 'Checkout')",
+        "Users who have a promo code expect to enter it in the cart — not finding it there creates uncertainty"
+      ],
+      fix: "Add a discount/promo code entry field directly in the cart view, before the Checkout button. This is the most common user expectation and reduces abandoned checkouts from users who want to confirm discount application before committing.",
+      screenshot: "screenshots/violation_376D_include-a-promo-code-discoun.jpg",
+      pageContexts: ["Cart"]
+    },
+    {
+      code: "#2943D", title: "Ensure Free Shipping Threshold Messaging is Consistent Across the Site",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > Shopping Cart",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disruptive", impactScore: -1.7,
+      implementation: [
+        "Announcement bar states: 'FREE SHIPPING ON ORDERS OVER $150*'",
+        "Cart page value-prop bar states: 'FREE DELIVERY OVER $100'",
+        "PDP trust badges show: 'Free Shipping Over $150*'",
+        "Three different thresholds are shown across the site — $150, $100 — creating trust erosion"
+      ],
+      fix: "Align all free shipping threshold messaging across the site to a single value. Audit announcement bars, cart value-prop sections, PDP trust badges, and checkout pages to ensure one consistent threshold is displayed everywhere.",
+      screenshot: "screenshots/violation_2943D_ensure-free-shipping-threshold.jpg",
+      pageContexts: ["Cart", "Product Page", "All Pages"]
+    },
+    {
+      code: "#2940D", title: "Display a Checkout Progress Indicator in the Checkout Flow",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > General Form Design & Checkout Layout",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Disruptive", impactScore: -2.0,
+      implementation: [
+        "The Shopify checkout flow has no visible progress indicator showing checkout steps",
+        "Users cannot see how many steps remain in the checkout process",
+        "No step labels (e.g. 'Contact > Shipping > Payment') are visible during checkout"
+      ],
+      fix: "Add a progress indicator to the checkout pages showing step number and labels (e.g. 'Contact Information > Shipping > Payment > Review'). This reduces checkout abandonment by helping users understand how far they are from completion.",
+      screenshot: "screenshots/violation_2940D_display-a-checkout-progress-in.jpg",
+      pageContexts: ["Checkout"]
+    },
+    {
+      code: "#378D", title: "Show Product Images in the Shopping Cart",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > Shopping Cart",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Cart shows product thumbnail images for each line item",
+        "Images are clearly associated with the product name and variant"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Cart"]
+    },
+    {
+      code: "#379D", title: "Show Product Variant Details (Size, Colour) in the Shopping Cart",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > Shopping Cart",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Cart line items display product name, selected colour, and selected size",
+        "Users can verify they have selected the correct variant before proceeding to checkout"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Cart"]
+    },
+    {
+      code: "#382D", title: "Allow Users to Update Quantity or Remove Items Directly in the Cart",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > Shopping Cart",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Cart includes quantity stepper (+ / −) and a REMOVE link for each line item",
+        "Quantity can be updated without leaving the cart",
+        "REMOVE link cleanly deletes the item from the cart"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Cart"]
+    },
+    {
+      code: "#389D", title: "Offer Express Checkout Options (PayPal, Shop Pay, Apple Pay)",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > Payment Flow",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Shop Pay, PayPal, and Google Pay express checkout buttons are displayed prominently in the cart",
+        "These allow users to skip form-filling and complete purchase in 1–2 taps"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Cart"]
+    },
+    {
+      code: "#390D", title: "Provide Multiple Delivery Options Including Click & Collect",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > Shipping & Fulfillment",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Checkout offers Standard and Express delivery with ETAs and free threshold messaging",
+        "Click & Collect is available from 5+ Melbourne stores with in-stock status per store",
+        "Per-item availability is shown for each click-and-collect location"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Checkout"]
+    },
+    {
+      code: "#391D", title: "Display Order Summary with Line Totals, Shipping, and Grand Total",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > Order Review & Confirmation",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Cart shows product subtotal, free shipping message, and total",
+        "Checkout shows full order summary with line totals, shipping cost, tax breakdown, and grand total",
+        "Tax is broken out separately (GST included)"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Cart", "Checkout"]
+    },
+    {
+      code: "#394D", title: "Provide Buy Now Pay Later Options in Checkout",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > Payment Flow",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Afterpay is available as a payment option in checkout",
+        "Afterpay instalment amount is shown in the cart payment options area"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Cart", "Checkout"]
+    },
+    {
+      code: "#397D", title: "Do Not Pre-Check Marketing Opt-In Checkboxes in Checkout",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > User Information & Address",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Marketing email opt-in checkbox in checkout is unchecked by default",
+        "Users must actively opt in — this complies with Australian Privacy Act requirements"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Checkout"]
+    },
+    {
+      code: "#398D", title: "Support a Discount Code and Gift Card Entry in Checkout",
+      theme: "cart", topic: "Desktop Web > Cart & Checkout > Shopping Cart",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Discount code and gift card entry fields are present in the Shopify checkout order summary sidebar",
+        "Both fields are clearly labelled and work correctly"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Checkout"]
+    },
+
+    // ═══════════════════════════════════════
+    // THEME: CUSTOMER ACCOUNTS
+    // ═══════════════════════════════════════
+
+    {
+      code: "#720D", title: "Provide a Comprehensive Account Dashboard with Multiple Self-Service Functions",
+      theme: "accounts", topic: "Desktop Web > Accounts & Self-Service > Account Dashboard",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disturbing", impactScore: -2.38,
+      implementation: [
+        "Account dashboard provides only two tabs: Orders and Profile",
+        "No wishlist management, saved payment methods, saved addresses, or preferences",
+        "No return initiation capability within the account — users must contact customer service",
+        "No order tracking capability from within the account dashboard",
+        "Shopify Customer Accounts v2 is deployed (account.kookai.com.au) but many self-service features are unused"
+      ],
+      fix: "Expand the account dashboard to include: wishlist, saved addresses, saved payment methods, order tracking, return initiation, communication preferences. Leverage Shopify Customer Accounts v2 capabilities already available. Each feature reduces customer service contact volume.",
+      screenshot: "screenshots/violation_720D_provide-a-comprehensive-accoun.jpg",
+      pageContexts: ["Account Dashboard"]
+    },
+    {
+      code: "#721D", title: "Allow Users to View and Track Orders from Their Account",
+      theme: "accounts", topic: "Desktop Web > Accounts & Self-Service > Orders & Order Tracking",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered Low", impact: "Harmful", impactScore: 3.23,
+      implementation: [
+        "Orders tab in account shows past orders with order number, date, and status",
+        "No live tracking integration — order status shows Shopify fulfilment status only",
+        "No tracking number with carrier deep-link is provided in the account order view"
+      ],
+      fix: "Enhance order tracking in the account by showing carrier tracking numbers as clickable links that open the carrier's tracking page. Add estimated delivery dates where available.",
+      screenshot: null,
+      pageContexts: ["Account Dashboard"]
+    },
+    {
+      code: "#722D", title: "Allow Users to Initiate Returns from Their Account",
+      theme: "accounts", topic: "Desktop Web > Accounts & Self-Service > Order Returns",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disruptive", impactScore: -1.7,
+      implementation: [
+        "No 'Return' or 'Request Return' button appears within the account Orders section",
+        "Users must visit the Returns FAQ page and contact customer service via email/phone to initiate returns",
+        "This is the most common self-service request on fashion sites — its absence increases support load"
+      ],
+      fix: "Add a 'Return Items' button to eligible orders in the account Orders section. Integrate with the existing returns flow at /pages/returns to allow self-service return initiation without email/phone contact.",
+      screenshot: "screenshots/violation_722D_allow-users-to-initiate-return.jpg",
+      pageContexts: ["Account Dashboard"]
+    },
+
+    // ═══════════════════════════════════════
+    // THEME: SITE-WIDE & ACCESSIBILITY
+    // ═══════════════════════════════════════
+
+    {
+      code: "#2800D", title: "Provide a Visible Skip Navigation Link for Keyboard and Screen Reader Users",
+      theme: "sitewide", topic: "Desktop Web > Site-Wide Design & Interaction > Accessibility",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "'Skip to main content' link is present in the DOM and activates on keyboard focus",
+        "Link is visually hidden by default but appears on Tab key press",
+        "Links to #MainContent anchor"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#2801D", title: "Ensure Sufficient Colour Contrast for All Text Elements",
+      theme: "sitewide", topic: "Desktop Web > Site-Wide Design & Interaction > Accessibility",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Primary content uses black (#1a1a1a) on white — easily meets WCAG AA 4.5:1 contrast ratio",
+        "Body text and headings have strong contrast across all page types",
+        "Muted text (product price, secondary labels) may approach the minimum threshold but generally passes"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#2802D", title: "Provide Visible Focus States for All Interactive Elements",
+      theme: "sitewide", topic: "Desktop Web > Site-Wide Design & Interaction > Accessibility",
+      platform: "Desktop", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Interruption", impactScore: -1.0,
+      implementation: [
+        "Focus states for buttons and links rely on browser default outlines only",
+        "Default browser focus rings have inconsistent visibility across different browsers",
+        "No custom focus styling that aligns with brand design while maintaining WCAG 2.1 Level AA compliance"
+      ],
+      fix: "Define custom focus styles for all interactive elements. Recommended: a 2px solid outline in a colour with sufficient contrast against the background (e.g. the brand's primary black). This improves keyboard navigation without impacting sighted users.",
+      screenshot: "screenshots/violation_2802D_provide-visible-focus-states-f.jpg",
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#2803D", title: "Include Payment Method Icons in the Footer",
+      theme: "sitewide", topic: "Desktop Web > Site-Wide Design & Interaction > Site-Wide Elements",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Interruption", impactScore: 1.2,
+      implementation: [
+        "Footer includes payment method icons: Apple Pay, Shop Pay, Google Pay, Visa, Mastercard, Amex, PayPal, Afterpay",
+        "Icons are clearly visible and correctly represent available payment methods"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#2804D", title: "Include Social Media Links in the Footer",
+      theme: "sitewide", topic: "Desktop Web > Site-Wide Design & Interaction > Site-Wide Elements",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Interruption", impactScore: 1.2,
+      implementation: [
+        "Footer includes social links to Facebook, Instagram, YouTube, Twitter/X, Pinterest, and TikTok",
+        "Icons are consistently styled and open in a new tab"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#2805D", title: "Provide a Newsletter Signup in the Footer",
+      theme: "sitewide", topic: "Desktop Web > Site-Wide Design & Interaction > Site-Wide Elements",
+      platform: "Desktop", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Interruption", impactScore: 1.2,
+      implementation: [
+        "Footer includes an email newsletter signup field with a 'Sign up' button",
+        "Describes the value proposition: 'new arrivals, VIP events and sale previews'"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+
+    // ═══════════════════════════════════════
+    // MOBILE TESTING (key mobile-specific)
+    // ═══════════════════════════════════════
+
+    {
+      code: "#795M", title: "Require Users to Explicitly Select a Size Before Adding to Bag (Mobile)",
+      theme: "pdp", topic: "Mobile Web > Product Page > The 'Buy' Section",
+      platform: "Mobile Web", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated High", impact: "Harmful", impactScore: -3.8,
+      implementation: [
+        "Mobile PDP shows a 'Select Size' dropdown — size is not pre-selected",
+        "However, the same silent-add-AU6-default behaviour from desktop applies on mobile",
+        "Users who tap 'Add to Bag' without opening the size dropdown risk ordering the wrong size"
+      ],
+      fix: "Same fix as desktop (#795D): prevent Add to Bag from triggering until size is explicitly selected. Show an inline error if Add to Bag is tapped with no size chosen.",
+      screenshot: "screenshots/violation_795M_require-users-to-explicitly-se.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#774M", title: "Provide Image Carousel with Visible Indicators on Mobile PDP",
+      theme: "pdp", topic: "Mobile Web > Product Page > Image Gallery UI",
+      platform: "Mobile Web", isLowCost: true, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Violated Low", impact: "Disruptive", impactScore: -1.7,
+      implementation: [
+        "Mobile PDP image gallery shows a full-width image but has no visible page dot indicators",
+        "Unlike the PLP where carousel dots are visible per product, the PDP has no dot indicators",
+        "Users cannot tell how many images exist or which image they are currently viewing"
+      ],
+      fix: "Add page dot indicators (or a counter such as '2/5') to the mobile PDP image gallery to show how many images exist and the user's current position. This is the standard mobile carousel pattern.",
+      screenshot: "screenshots/violation_774M_provide-image-carousel-with-vi.jpg",
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#850M", title: "Use Full-Width Touch-Friendly Size Selector on Mobile",
+      theme: "pdp", topic: "Mobile Web > Product Page > Product Variations",
+      platform: "Mobile Web", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered Low", impact: "Interruption", impactScore: 1.02,
+      implementation: [
+        "Mobile PDP uses a custom 'Select Size' dropdown (not a native iOS select) — reasonably touch-friendly",
+        "The dropdown lists sizes with AU and US equivalents and stock status",
+        "Custom dropdown is acceptable for mobile but pill buttons would be more scannable"
+      ],
+      fix: null,
+      screenshot: null,
+      pageContexts: ["Product Page"]
+    },
+    {
+      code: "#2711M", title: "Ensure Mobile Hamburger Menu is Easily Accessible",
+      theme: "homepage", topic: "Mobile Web > Main Navigation",
+      platform: "Mobile Web", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Hamburger menu icon (≡) is displayed in the top-left corner of the mobile header",
+        "Tapping the icon reveals a full-screen mobile nav with all category links",
+        "Search icon is also accessible in the mobile header"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["All Pages"]
+    },
+    {
+      code: "#2712M", title: "Provide a Responsive 2-Column Product Grid on Mobile",
+      theme: "plp", topic: "Mobile Web > Product Lists & Filtering > List Layout",
+      platform: "Mobile Web", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Mobile PLP renders in a 2-column product grid at 393px viewport width",
+        "Product cards show image carousel with dots, colour swatches, product name, price, and Add to Bag",
+        "Layout is clean and proportionate for mobile browsing"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Listing Page"]
+    },
+    {
+      code: "#2713M", title: "Show Colour Swatches on Mobile Product Cards",
+      theme: "plp", topic: "Mobile Web > Product Lists & Filtering > List Item Features",
+      platform: "Mobile Web", isLowCost: false, isMissedOpportunity: false, isSuggestion: false,
+      judgement: "Adhered High", impact: "Disruptive", impactScore: 2.0,
+      implementation: [
+        "Mobile product listing cards show colour swatches below the product name",
+        "Tapping a swatch navigates to that colour variant",
+        "Current colour is highlighted"
+      ],
+      fix: null, screenshot: null,
+      pageContexts: ["Product Listing Page"]
+    }
+
+  ]
+};
+
+// ═══════════════════════════════════════════════
+//  APP LOGIC
+// ═══════════════════════════════════════════════
+
+let activeTheme = 'overview';
+let activeGuideline = null;
+
+function scoreClass(score) {
+  if (score === null || score === undefined) return 'na';
+  if (score < 5) return 'poor';
+  if (score < 20) return 'mediocre';
+  if (score < 40) return 'fair';
+  if (score < 60) return 'decent';
+  return 'good';
+}
+
+function judgementClass(j) {
+  const map = {
+    'Violated High': 'violated-high',
+    'Violated Low': 'violated-low',
+    'Neutral': 'neutral',
+    'Adhered Low': 'adhered-low',
+    'Adhered High': 'adhered-high',
+    'Not Applicable': 'na'
+  };
+  return map[j] || 'na';
+}
+
+function judgementIcon(j) {
+  if (j === 'Violated High') return '!!';
+  if (j === 'Violated Low') return '!';
+  if (j === 'Adhered High' || j === 'Adhered Low') return '✓';
+  if (j === 'Neutral') return '~';
+  return '–';
+}
+
+function scoreToBarPct(score) {
+  // Map score range -50 to +100 → 0% to 100%
+  if (score === null) return 0;
+  const min = -50, max = 100;
+  return Math.max(0, Math.min(100, ((score - min) / (max - min)) * 100));
+}
+
+function init() {
+  const d = AUDIT_DATA;
+  // Topbar
+  document.getElementById('topbar-sitename').textContent = d.site;
+  document.getElementById('topbar-url').textContent = '— ' + d.siteType;
+  document.getElementById('topbar-date').textContent = d.date + ' · ' + d.auditor;
+
+  // Overview
+  document.getElementById('ov-sitename').textContent = d.site;
+  document.getElementById('ov-meta').textContent = d.guidelineCount ? d.guidelineCount + ' guidelines assessed · ' + d.scope : d.scope;
+  document.getElementById('ov-summary-text').textContent = d.executiveSummary;
+
+  // Top violations
+  const topViolations = [...d.assessments]
+    .filter(a => a.impactScore < 0)
+    .sort((a, b) => a.impactScore - b.impactScore)
+    .slice(0, 5);
+  const tvEl = document.getElementById('ov-top-violations');
+  topViolations.forEach((v, i) => {
+    tvEl.innerHTML += `
+      <div class="violation-item">
+        <div class="vi-rank">${i+1}</div>
+        <div class="vi-body">
+          <div class="vi-title">${v.title}</div>
+          <div class="vi-meta">${v.code} · ${v.topic} · ${v.judgement}</div>
+        </div>
+        <div class="vi-score">${v.impactScore.toFixed(1)}</div>
+      </div>`;
+  });
+
+  // Scorecard
+  buildScorecard();
+
+  // Tabs
+  buildTabs();
+
+  // Section pages
+  buildSectionPages();
+}
+
+function buildScorecard() {
+  const themes = AUDIT_DATA.themes.filter(t => t.id !== 'overview');
+  let html = '';
+  themes.forEach(t => {
+    const pct = scoreToBarPct(t.performance);
+    const cls = scoreClass(t.performance);
+    const scoreLabel = t.performance === null
+      ? '<span style="font-size:12px;color:#9ca3af;font-style:italic">Too few ratings</span>'
+      : `<span class="bar-score">${t.performance > 0 ? '+' : ''}${t.performance}</span>`;
+    // Simulated benchmark dots
+    const dots = generateDots(t.performance);
+    html += `
+      <div class="scorecard-row">
+        <div>
+          <div class="scorecard-label">${t.name}</div>
+          <div class="scorecard-sublabel">${t.guidelineCount} Guidelines · ${t.violationCount} violations</div>
+        </div>
+        <div class="scorecard-bar-wrap">
+          <div class="bar-track" style="width:calc(100% - 60px)">
+            <div class="bar-fill ${cls}" style="width:${pct}%"></div>
+            ${t.performance !== null ? `<div class="bar-marker" style="left:${pct}%"></div>` : ''}
+          </div>
+          ${scoreLabel}
+          <div class="dots-row" style="width:calc(100% - 60px)">${dots}</div>
+        </div>
+      </div>`;
+  });
+  document.getElementById('scorecard').innerHTML = html;
+}
+
+function generateDots(currentScore) {
+  // Simulate ~35 benchmark site dots spread across the scale
+  const positions = [2,5,8,11,14,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,50,53,56,59,62,65,68,71,74,77,80,85,90,95];
+  return positions.map(p => `<div class="dot" style="margin-left:${p * 0.01 * (100/96) * 100}%;position:absolute"></div>`).join('');
+}
+
+function buildTabs() {
+  const tabs = document.getElementById('main-tabs');
+  AUDIT_DATA.themes.forEach(t => {
+    const scoreHtml = t.performance !== null && t.id !== 'overview'
+      ? `<span class="tab-score ${scoreClass(t.performance)}">${t.performance > 0 ? '+' : ''}${t.performance}</span>` : '';
+    const div = document.createElement('div');
+    div.className = 'tab' + (t.id === 'overview' ? ' active' : '');
+    div.dataset.theme = t.id;
+    div.innerHTML = t.name + scoreHtml;
+    div.onclick = () => switchTab(t.id);
+    tabs.appendChild(div);
+  });
+}
+
+function switchTab(themeId) {
+  activeTheme = themeId;
+  activeGuideline = null;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.theme === themeId));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-overview' && themeId === 'overview'));
+  document.querySelectorAll('.section-page').forEach(p => p.classList.toggle('active', p.id === 'section-' + themeId));
+}
+
+function buildSectionPages() {
+  const container = document.getElementById('section-pages');
+  const themes = AUDIT_DATA.themes.filter(t => t.id !== 'overview');
+  themes.forEach(t => {
+    const assessments = AUDIT_DATA.assessments.filter(a => a.theme === t.id);
+    const violated = assessments.filter(a => a.judgement.startsWith('Violated'));
+    const adhered = assessments.filter(a => a.judgement.startsWith('Adhered'));
+    const neutral = assessments.filter(a => a.judgement === 'Neutral' || a.judgement === 'Not Applicable');
+
+    const page = document.createElement('div');
+    page.className = 'section-page';
+    page.id = 'section-' + t.id;
+
+    // sidebar
+    let sidebarHtml = `<div class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-section-name">${t.name}</div>
+        <div class="sidebar-count">${assessments.length} of ${t.guidelineCount} Guidelines Assessed</div>
+      </div>`;
+    if (violated.length) {
+      sidebarHtml += `<div class="sidebar-group"><div class="sidebar-group-label">VIOLATIONS (${violated.length})</div>`;
+      violated.forEach(a => { sidebarHtml += guidelineRowHtml(a, t.id); });
+      sidebarHtml += '</div>';
+    }
+    if (adhered.length) {
+      sidebarHtml += `<div class="sidebar-group"><div class="sidebar-group-label">PASSING (${adhered.length})</div>`;
+      adhered.forEach(a => { sidebarHtml += guidelineRowHtml(a, t.id); });
+      sidebarHtml += '</div>';
+    }
+    if (neutral.length) {
+      sidebarHtml += `<div class="sidebar-group"><div class="sidebar-group-label">NEUTRAL / N/A (${neutral.length})</div>`;
+      neutral.forEach(a => { sidebarHtml += guidelineRowHtml(a, t.id); });
+      sidebarHtml += '</div>';
+    }
+    sidebarHtml += '</div>';
+
+    // detail pane
+    const detailHtml = `<div class="detail-pane" id="detail-${t.id}">
+      <div class="detail-empty" id="detail-empty-${t.id}">Select a guideline to view details</div>
+      <div class="detail-content" id="detail-content-${t.id}" style="display:none"></div>
+      <div class="preview-pane" id="preview-${t.id}">
+        <div class="preview-header">SITE PREVIEW</div>
+        <div class="preview-empty" id="preview-empty-${t.id}">Select a guideline</div>
+        <div class="preview-img" id="preview-img-${t.id}" style="display:none"><img id="preview-src-${t.id}" src="" alt=""></div>
+      </div>
+    </div>`;
+
+    page.innerHTML = sidebarHtml + detailHtml;
+    container.appendChild(page);
+  });
+}
+
+function guidelineRowHtml(a, themeId) {
+  const jc = judgementClass(a.judgement);
+  const icon = judgementIcon(a.judgement);
+  return `<div class="guideline-row" data-code="${a.code}" onclick="selectGuideline('${themeId}','${a.code.replace(/'/g,"\\'")}')">
+    <div class="gr-icon ${jc}">${icon}</div>
+    <div>
+      <div class="gr-title">${a.title}</div>
+      <div class="gr-id">${a.code}</div>
+    </div>
+  </div>`;
+}
+
+function selectGuideline(themeId, code) {
+  const a = AUDIT_DATA.assessments.find(x => x.theme === themeId && x.code === code);
+  if (!a) return;
+  activeGuideline = code;
+
+  // Highlight sidebar row
+  document.querySelectorAll(`#section-${themeId} .guideline-row`).forEach(r => {
+    r.classList.toggle('active', r.dataset.code === code);
+  });
+
+  // Hide empty state, show content
+  document.getElementById(`detail-empty-${themeId}`).style.display = 'none';
+  const content = document.getElementById(`detail-content-${themeId}`);
+  content.style.display = 'block';
+
+  const jc = judgementClass(a.judgement);
+  const scoreColor = a.impactScore < 0 ? 'negative' : (a.impactScore > 0 ? 'positive' : '');
+
+  // Page context buttons
+  const pageContexts = a.pageContexts || ['All Pages'];
+  const contextBtns = pageContexts.map((p,i) =>
+    `<button class="page-btn${i===0?' active':''}" onclick="selectPageContext(this,'${themeId}','${a.code.replace(/'/g,"\\'")}','${p}')">${p}</button>`
+  ).join('');
+
+  // Implementation bullets
+  const implHtml = (a.implementation||[]).map(b => `<div class="dc-impl-item">${b}</div>`).join('');
+
+  // Screenshot
+  const screenshotHtml = a.screenshot
+    ? `<img class="dc-screenshot" src="${a.screenshot}" alt="Screenshot" onclick="openModal('${a.screenshot}')" onerror="this.parentElement.innerHTML='<div class=\\'dc-no-screenshot\\'>Screenshot: ${a.screenshot}</div>'">`
+    : `<div class="dc-no-screenshot">No violation screenshot (guideline passed or N/A)</div>`;
+
+  // Tags
+  const tagsHtml = `
+    <span class="tag ${a.isLowCost?'yes':''}">Low Cost: ${a.isLowCost?'Yes':'No'}</span>
+    <span class="tag ${a.isMissedOpportunity?'yes':''}">Missed Opportunity: ${a.isMissedOpportunity?'Yes':'No'}</span>
+    <span class="tag ${a.isSuggestion?'yes':''}">Suggestion: ${a.isSuggestion?'Yes':'No'}</span>`;
+
+  content.innerHTML = `
+    <div class="page-selector">${contextBtns}</div>
+    <div class="detail-card">
+      <div class="detail-card-head">
+        <div class="dc-meta">
+          <span class="dc-id">${a.code}</span>
+          <span class="dc-badge ${jc}">${a.judgement}</span>
+          <span class="dc-impact">${a.impact}</span>
+          <span class="dc-score ${scoreColor}">${a.impactScore > 0 ? '+' : ''}${a.impactScore.toFixed(1)}</span>
+        </div>
+        <div class="dc-title">${a.title}</div>
+        <div class="detail-tags">${tagsHtml}</div>
+      </div>
+      <div class="detail-card-body">
+        <div class="dc-section">
+          <div class="dc-section-label">Your Implementation</div>
+          ${implHtml}
+        </div>
+        <div class="dc-section">
+          <div class="dc-section-label">Screenshot</div>
+          ${screenshotHtml}
+        </div>
+        ${a.fix ? `<div class="dc-section">
+          <div class="dc-fix-label">UX Recommendation</div>
+          <div class="dc-fix">${a.fix}</div>
+        </div>` : ''}
+      </div>
+    </div>`;
+
+  // Preview pane
+  updatePreview(themeId, a.screenshot);
+}
+
+function selectPageContext(btn, themeId, code, context) {
+  btn.closest('.page-selector').querySelectorAll('.page-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function updatePreview(themeId, screenshot) {
+  const empty = document.getElementById(`preview-empty-${themeId}`);
+  const imgWrap = document.getElementById(`preview-img-${themeId}`);
+  const img = document.getElementById(`preview-src-${themeId}`);
+  if (screenshot) {
+    img.src = screenshot;
+    img.onerror = () => { imgWrap.style.display='none'; empty.style.display='flex'; empty.textContent='Screenshot: ' + screenshot; };
+    img.onload = () => { empty.style.display='none'; imgWrap.style.display='block'; };
+    img.src = screenshot; // trigger load
+  } else {
+    imgWrap.style.display = 'none';
+    empty.style.display = 'flex';
+    empty.textContent = 'No screenshot available';
+  }
+}
+
+function openModal(src) {
+  document.getElementById('modal-img').src = src;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+// ── CSV EXPORT ──
+function exportCSV() {
+  const headers = ['Code','Title','Platform','Is Low Cost','Is Missed Opportunity','Is Suggestion','Judgement','Impact','Impact Score','Notes','Topic','Screenshot'];
+  const rows = AUDIT_DATA.assessments.map(a => [
+    a.code, a.title, a.platform,
+    a.isLowCost ? 'Yes' : 'No',
+    a.isMissedOpportunity ? 'Yes' : 'No',
+    a.isSuggestion ? 'Yes' : 'No',
+    a.judgement, a.impact, a.impactScore,
+    (a.implementation||[]).join(' · ') + (a.fix ? ' | Fix: ' + a.fix : ''),
+    a.topic || '',
+    a.screenshot || ''
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = AUDIT_DATA.site.replace(/\./g,'_') + '_ux_audit.csv';
+  a.click();
+}
+
+init();
+</script>
+</body>
+</html>
